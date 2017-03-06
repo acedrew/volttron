@@ -102,7 +102,6 @@ def main():
     arg_parser.add_argument("--address",
                             help="Target only device(s) at <address> for request")
 
-
     arg_parser.add_argument("--range", type=int, nargs=2, metavar=('LOW', 'HIGH'),
                             help="Lower and upper limit on device ID in results")
 
@@ -113,7 +112,7 @@ def main():
     arg_parser.add_argument("--proxy-id",
                             help="VIP IDENTITY of the BACnet proxy agent.",
                             default="platform.bacnet_proxy")
-    
+
     args = arg_parser.parse_args()
 
     _log.debug("initialization")
@@ -140,17 +139,15 @@ def main():
     try:
         agent.send_iam(**kwargs)
     except errors.Unreachable:
-        _log.error("There is no BACnet proxy Agent running on the platform with the VIP IDENTITY {}".format(args.proxy_id))
+        _log.error(("There is no BACnet proxy Agent running on the platform "
+                    "with the VIP IDENTITY {}").format(args.proxy_id))
     else:
         gevent.sleep(args.timeout)
-        
-try:
-    main()
-except Exception, e:
-    _log.exception("an error has occurred: %s", e)
-finally:
-    _log.debug("finally")
-    
 
-    
-
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        _log.exception("an error has occurred: %s", e)
+    finally:
+        _log.debug("finally")
