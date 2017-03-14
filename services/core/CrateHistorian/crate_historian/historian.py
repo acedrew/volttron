@@ -249,12 +249,9 @@ class CrateHistorian(BaseHistorian):
                 meta_type = meta.get('type', None)
                 db_datatype = None
                 try:
-                    if meta_type == 'integer':
-                        value = float(value)
+                    if meta_type in ('integer', 'float'):
                         db_datatype = 'numeric'
-                    elif meta_type == 'float':
                         value = float(value)
-                        db_datatype = 'numeric'
                     else:
                         try:
                             value = float(value)
