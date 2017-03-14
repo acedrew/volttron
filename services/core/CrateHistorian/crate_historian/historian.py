@@ -71,6 +71,7 @@ from dateutil.tz import tzutc
 from crate import client
 from volttron.platform.agent.utils import get_utc_seconds_from_epoch
 from volttron.platform.messaging.health import Status, STATUS_BAD
+from volttron.utils.docs import doc_inherit
 from zmq.utils import jsonapi
 
 from volttron.platform.agent import utils
@@ -187,6 +188,7 @@ class CrateHistorian(BaseHistorian):
 
         return "{schema}.{table}".format(schema=self._schema, table=table)
 
+    @doc_inherit
     def publish_to_historian(self, to_publish_list):
         _log.debug("publish_to_historian number of items: {}".format(
             len(to_publish_list)))
@@ -408,6 +410,7 @@ cached.
         _log.debug("Real Query: " + real_query)
         return real_query, args
 
+    @doc_inherit
     def query_historian(self, topic, start=None, end=None, agg_type=None,
                         agg_period=None, skip=0, count=None,
                         order="FIRST_TO_LAST"):
@@ -522,6 +525,7 @@ cached.
 
         return results
 
+    @doc_inherit
     def query_topic_list(self):
         _log.debug("Querying topic list")
         cursor = self.get_connection().cursor()
@@ -535,6 +539,7 @@ cached.
         results = [x[0] for x in cursor.fetchall()]
         return results
 
+    @doc_inherit
     def query_topics_metadata(self, topics):
         pass
         # meta = {}
@@ -598,6 +603,7 @@ cached.
                                               error_trace=True)
         return self._connection
 
+    @doc_inherit
     def historian_setup(self):
         try:
             _log.debug("HISTORIAN SETUP")
