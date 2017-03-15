@@ -88,11 +88,13 @@ crate_config_no_schema = {
 
 expected_table_list = [
     u'analysis',
-    u'analysis_double',
+    u'analysis_string',
     u'datalogger',
-    u'datalogger_double',
+    u'datalogger_string',
+    u'datalogger_raw',
     u'device',
-    u'device_double',
+    u'device_string',
+    u'device_raw',
     u'meta',
     u'record',
     u'topic'
