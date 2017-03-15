@@ -220,12 +220,13 @@ class CrateHistorian(BaseHistorian):
 
             cursor.execute(insert_query, (topic_id, ts_formatted,
                                           data, data))
-            if self._raw_schema_enabled and table_name in ("datalogger",
-                                                           "device") and topic_name:
+            if self._raw_schema_enabled and table_name in (
+                    "datalogger", "device") and topic_name:
                 insert_query_raw = """INSERT INTO "{}"."{}" (topic, ts, value)
                                 VALUES(?, ?, ?)
                                 ON DUPLICATE KEY UPDATE value=value
                                 """.format(schema_name, table_name + "_raw")
+                _log.debug("QUERY: {}".format(insert_query))
                 cursor.execute(insert_query_raw, (topic_name, ts_formatted,
                                                   data))
 
@@ -250,12 +251,9 @@ class CrateHistorian(BaseHistorian):
                 meta_type = meta.get('type', None)
                 db_datatype = None
                 try:
-                    if meta_type == 'integer':
-                        value = int(value)
+                    if meta_type in ('integer', 'float'):
                         db_datatype = 'numeric'
-                    elif meta_type == 'float':
                         value = float(value)
-                        db_datatype = 'numeric'
                     else:
                         try:
                             value = float(value)
