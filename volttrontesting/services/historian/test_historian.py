@@ -294,7 +294,9 @@ def setup_crate(connection_params, table_names):
                           error_trace=True)
     cursor = conn.cursor()
     schema = crate_platform1.get("schema", 'test_historian')
-    for tbl in ('analysis', 'datalogger','device', 'meta', 'record', 'topic'):
+    for tbl in ('analysis', 'analysis_string', 'datalogger_string',
+                'datalogger', 'device_string', 'device', 'meta',
+                'record', 'topic'):
         try:
             cursor.execute(
                 'DELETE FROM {schema}.{table}'.format(
@@ -386,8 +388,8 @@ def cleanup_mongodb(db_connection, truncate_tables):
 def cleanup_crate(db_connection, truncate_tables):
     cursor = db_connection.cursor()
     schema = crate_platform1.get("schema", "test_historian")
-    for tbl in ('analysis', 'analysis_double', 'datalogger',
-                'datalogger_double', 'device', 'device_double',
+    for tbl in ('analysis', 'analysis_string', 'datalogger',
+                'datalogger_string', 'device', 'device_string',
                 'meta', 'record', 'topic'):
         try:
             cursor.execute(
@@ -1606,6 +1608,7 @@ def test_insert_duplicate(request, historian, publish_agent, query_agent,
     :param clean: teardown function
     """
     global query_points, DEVICES_ALL_TOPIC, db_connection
+    clean(request)
 
     # print('HOME', volttron_instance.volttron_home)
     print("\n** test_basic_function for {}**".format(

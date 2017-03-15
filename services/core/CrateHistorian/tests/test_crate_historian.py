@@ -167,7 +167,7 @@ def test_creates_default_table_prefixes(volttron_instance, crate_connection1):
         agent_uuid = vi.install_agent(agent_dir="services/core/CrateHistorian",
                                       config_file=crate_config_no_schema)
 
-        gevent.sleep(0.5)
+        gevent.sleep(1)
         tables = retrieve_tables_from_schema(crate_connection1, "historian")
 
         assert len(expected_table_list) == len(tables)
@@ -188,6 +188,7 @@ def test_creates_schema_prefix_tables(volttron_instance, crate_connection2):
         agent_uuid = vi.install_agent(agent_dir="services/core/CrateHistorian",
                                       config_file=crate_config)
 
+        gevent.sleep(1)
         tables = retrieve_tables_from_schema(crate_connection2, "testing")
 
         assert len(expected_table_list) == len(tables)
