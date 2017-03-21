@@ -88,7 +88,8 @@ bacpypes.core.enable_sleeping()
 bacpypes.core.SPIN = 0.1
 
 from bacpypes.pdu import Address, GlobalBroadcast
-from bacpypes.app import LocalDeviceObject, BIPSimpleApplication
+from bacpypes.app import BIPSimpleApplication
+from bacpypes.service.device import LocalDeviceObject
 from bacpypes.object import get_datatype
 
 from bacpypes.apdu import (ReadPropertyRequest,
