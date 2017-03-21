@@ -443,7 +443,7 @@ class BACnetProxyAgent(Agent):
         _log.info('ven_id '+str(ven_id))
 
         # Check to see if they gave a valid apdu length.
-        if encode_max_apdu_response(max_apdu_len) is None:
+        if encode_max_apdu_length_accepted(max_apdu_len) is None:
             raise ValueError("Invalid max_apdu_len: {} Valid options are 50, "
                              "128, 206, 480, 1024, and 1476".format(
                                  max_apdu_len))
