@@ -102,7 +102,7 @@ from bacpypes.apdu import (ReadPropertyRequest,
                            ReadPropertyMultipleACK,
                            PropertyReference,
                            ReadAccessSpecification,
-                           encode_max_apdu_response,
+                           encode_max_apdu_length_accepted,
                            WhoIsRequest,
                            IAmRequest,
                            ConfirmedRequestSequence)
