@@ -203,7 +203,6 @@ class BACnet_application(BIPSimpleApplication, RecurringTask):
     def _get_iocb_key_for_apdu(self, apdu):
         return (apdu.pduSource, apdu.apduInvokeID)
 
-
     def _get_iocb_for_apdu(self, apdu, invoke_key):
 
         # find the request
@@ -224,9 +223,10 @@ class BACnet_application(BIPSimpleApplication, RecurringTask):
             return None
         elif isinstance(apdu, RejectPDU):
             working_iocb.set_exception(
-                RuntimeError("Device at {source} rejected the request: {reason}"
-                             "".format(source=apdu.pduSource,
-                                       reason=apdu.apduAbortRejectReason)))
+                RuntimeError("Device at {source} rejected the request:"
+                             " {reason}".format(
+                                 source=apdu.pduSource,
+                                 reason=apdu.apduAbortRejectReason)))
             return None
         else:
             return working_iocb

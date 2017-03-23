@@ -173,7 +173,7 @@ class Interface(BaseInterface):
             _log.warning("Unable to reach BACnet proxy.")
             self.schedule_ping()
             raise
-
+        _log.debug("MasterDriver BACnet Interface result: {}".format(result))
         return result
 
     def revert_all(self, priority=None):
