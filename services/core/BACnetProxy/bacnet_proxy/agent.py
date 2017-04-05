@@ -716,8 +716,12 @@ class BACnetProxyAgent(Agent):
                 request.pduDestination = Address(target_address)
 
                 iocb = self.iocb_class(request)
-                self.this_application.submit_request(iocb)
-                bacnet_results = iocb.ioResult.get(10)
+                try:
+                    self.this_application.submit_request(iocb)
+                    bacnet_results = iocb.ioResult.get(10)
+                except Exception as e:
+                    _log.debug("{}".format(iocb))
+                    raise e
 
                 _log.debug(("Received read response from {target} count: "
                             "{count}").format(count=count,
