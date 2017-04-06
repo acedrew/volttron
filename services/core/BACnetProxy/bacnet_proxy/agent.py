@@ -711,12 +711,12 @@ class BACnetProxyAgent(Agent):
                 _log.debug(("Requesting {count} properties from "
                            "{target}").format(count=count,
                                               target=target_address))
-                request = ReadPropertyMultipleRequest(
-                    listOfReadAccessSpecs=read_access_spec_list)
-                request.pduDestination = Address(target_address)
-
-                iocb = self.iocb_class(request)
                 try:
+                    request = ReadPropertyMultipleRequest(
+                        listOfReadAccessSpecs=read_access_spec_list)
+                    request.pduDestination = Address(target_address)
+
+                    iocb = self.iocb_class(request)
                     self.this_application.submit_request(iocb)
                     bacnet_results = iocb.ioResult.get(10)
                 except Exception as e:
