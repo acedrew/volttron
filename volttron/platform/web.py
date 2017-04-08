@@ -638,8 +638,8 @@ class MasterWebService(Agent):
                 content_type = res['content_type']
                 start_response('200 OK',
                                [('Content-Type', content_type)])
-                _log.debug('RESPONSE WEB: {}'.format(res))
-                return res
+                _log.debug('RESPONSE WEB: {}'.format(res['content']))
+                return res['content']
         else:
             start_response('200 OK',
                            [('Content-Type', 'application/json')])
