@@ -111,7 +111,7 @@ agent = None
 
 def read_props(address, parameters):
     return agent.vip.rpc.call(agent.proxy_id, "read_properties", address,
-                                parameters).get(timeout=5)
+                                parameters).get(timeout=15)
 
 
 def read_prop(address, obj_type, obj_inst, prop_id, index=None):
