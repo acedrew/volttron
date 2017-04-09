@@ -333,7 +333,8 @@ def process_object(address, obj_type, index, max_range_report, config_writer):
 
     _log.debug('  object units = ' + str(object_units))
     _log.debug('  object units details = ' + str(object_units_details))
-    _log.debug('  object notes = ' + object_notes)
+    if object_notes:
+        _log.debug('  object notes = ' + object_notes)
 
     results = {}
     results['Reference Point Name'] = results['Volttron Point Name'] = object_name
