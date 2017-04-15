@@ -188,7 +188,6 @@ def process_object(address, obj_type, index, max_range_report, config_writer):
 
     try:
         object_notes = read_prop(address, obj_type, index, "description")
-
     except (TypeError,RemoteError):
         object_notes = ''
 
@@ -317,7 +316,6 @@ def process_object(address, obj_type, index, max_range_report, config_writer):
                     pass
                 except RemoteError:
                     pass
-
             if obj_type != 'analogInput':
                 try:
                     default_value = read_prop(address, obj_type, index, "relinquishDefault")
@@ -330,7 +328,6 @@ def process_object(address, obj_type, index, max_range_report, config_writer):
                     pass
                 except RemoteError:
                     pass
-
     _log.debug('  object units = ' + str(object_units))
     _log.debug('  object units details = ' + str(object_units_details))
     if object_notes:
@@ -358,7 +355,6 @@ def main():
 
     arg_parser.add_argument("--address",
                             help="Address of target device, may be needed to help route initial request to device." )
-
     arg_parser.add_argument("--registry-out-file", type=argparse.FileType('wb'),
                             help="Output registry to CSV file",
                             default=sys.stdout )
@@ -420,7 +416,6 @@ def main():
     }
 
     json.dump(config, args.driver_out_file, indent=4)
-
     _log.debug('pduSource = ' + target_address)
     _log.debug('iAmDeviceIdentifier = ' + str(device_id))
     _log.debug('maxAPDULengthAccepted = ' + str(results["max_apdu_length"]))
@@ -438,8 +433,6 @@ def main():
         _log.debug('description = ' + str(device_description))
     except TypeError:
         _log.debug('device missing description')
-
-
 
     config_writer = DictWriter(args.registry_out_file,
                                ('Reference Point Name',
