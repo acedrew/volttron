@@ -184,6 +184,7 @@ class Interface(BaseInterface):
                     _log.info("Device requires a lower max_per_request setting. Trying: "+str(self.max_per_request))
                     continue
                 else:
+                    _log.error("Error while scraping: {}".format(point_map))
                     raise
             except errors.Unreachable:
                 #If the Proxy is not running bail.
