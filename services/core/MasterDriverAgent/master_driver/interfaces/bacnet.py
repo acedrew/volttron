@@ -194,7 +194,7 @@ class Interface(BaseInterface):
                 _log.error("Error while scraping: {}".format(point_map))
                 raise
             else:
-                break
+                pass
 
         return result
 
