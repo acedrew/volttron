@@ -315,7 +315,7 @@ class BACnet_application(BIPSimpleApplication, RecurringTask):
                     if readResult.propertyAccessError is not None:
                         error_obj = readResult.propertyAccessError
 
-                        msg = 'ERROR DURRING SCRAPE of {2} (Class: {0} Code: {1})'
+                        msg = 'ERROR DURING SCRAPE of {2} (Class: {0} Code: {1})'
                         _log.error(msg.format(error_obj.errorClass,
                                               error_obj.errorCode,
                                               objectIdentifier))
