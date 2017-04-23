@@ -226,6 +226,9 @@ class CrateHistorian(BaseHistorian):
                                 """.format(schema_name, table_name + "_raw")
                 cursor.execute(insert_query_raw, (topic_name, ts_formatted,
                                                   data))
+            else:
+                cursor.execute(insert_query, (topic_id, ts_formatted,
+                                            data, data))
 
         try:
             if self._connection is None:
