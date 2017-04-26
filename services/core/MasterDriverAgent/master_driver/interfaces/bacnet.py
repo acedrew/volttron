@@ -181,7 +181,7 @@ class Interface(BaseInterface):
                         raise
                     self.register_count_divisor += 1
                     self.max_per_request = max(int(self.register_count/self.register_count_divisor), 1)
-                    _log.info("Device requires a lower max_per_request setting. Trying: "+str(self.max_per_request))
+                    _log.info("Device requires a lower max_per_request setting. Trying: {}".format(self.max_per_request))
                     continue
                 else:
                     raise
@@ -189,6 +189,9 @@ class Interface(BaseInterface):
                 #If the Proxy is not running bail.
                 _log.warning("Unable to reach BACnet proxy.")
                 self.schedule_ping()
+                raise
+            except Exception as e:
+                _log.error("Error while scraping: {}".format(point_map))
                 raise
             else:
                 break
