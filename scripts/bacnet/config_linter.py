@@ -18,12 +18,13 @@ REQUIRED_HEADERS = {'Reference Point Name': {"type": "str"},
                     'Writable': {"type": "str", "values": ["TRUE", "FALSE"]},
                     'Index': {"type": "int"}}
 
+
 def check_type(value, typename):
-	try:
+    try:
         module = importlib.import_module('__builtin__')
         cls = getattr(module, typename)
         cls(value)
-	except:
+    except:
         return False
     return True
 
@@ -42,11 +43,12 @@ def main():
     for row, i in enumerate(registry):
         for header, props in REQUIRED_HEADERS.items():
             if not check_type(row[header], props['type']):
-            print("check input row: {}, {} not castable to correct type
-
-
-
-
+                print("check input row: {}, {} not castable to correct"
+                      " type".format(i, header))
+                pass
+            if "values" in props and not row[header] in props["values"]:
+                print("Value of {} must be one of {} found {}".format(
+                    header, props, row[header]))
 
 
 if __name__ == "__main__":
