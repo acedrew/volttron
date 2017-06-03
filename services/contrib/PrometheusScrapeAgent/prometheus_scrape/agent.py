@@ -4,8 +4,7 @@
 import logging
 import sys
 import re
-import gzip
-import StringIO
+import zlib
 from collections import defaultdict
 
 from volttron.platform.agent import utils
@@ -76,14 +75,11 @@ class PrometheusScrapeAgent(Agent):
         for device, delete_topics in keys_to_delete.iteritems():
             for topic in delete_topics:
                 del self._cache[device][topic]
-        zbuf = StringIO.StringIO()
-        zfile = gzip.GzipFile(None, 'wb', 6, zbuf)
-        zfile.write(result)
-        zfile.close()
-        result = zbuf.getvalue()
-        _log.error(result)
+        gzip_compress = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS | 16)
+        data = gzip_compress.compress(content) + gzip_compress.flush()
+        _log.error(data)
 
-        return (result, [('Content-Type', 'text/plain'),
+        return (data, [('Content-Type', 'text/plain'),
                          ('Content-Encoding', 'gzip')])
 
     def _clean_compat(self, sender, topic, headers, message):
