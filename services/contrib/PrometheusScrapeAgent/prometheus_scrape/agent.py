@@ -77,9 +77,8 @@ class PrometheusScrapeAgent(Agent):
                 del self._cache[device][topic]
         gzip_compress = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS | 16)
         data = gzip_compress.compress(result) + gzip_compress.flush()
-        _log.error(data.decode('ascii'))
 
-        return (data.decode('ascii'), [('Content-Type', 'text/plain'),
+        return (data, [('Content-Type', 'text/plain'),
                          ('Content-Encoding', 'gzip')])
 
     def _clean_compat(self, sender, topic, headers, message):
