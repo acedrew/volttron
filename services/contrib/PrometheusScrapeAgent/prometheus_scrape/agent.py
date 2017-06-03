@@ -77,10 +77,11 @@ class PrometheusScrapeAgent(Agent):
             for topic in delete_topics:
                 del self._cache[device][topic]
         zbuf = StringIO.StringIO()
-        zfile = gzip.GzipFile(None, 'wb', 9, zbuf)
+        zfile = gzip.GzipFile(None, 'wb', 6, zbuf)
         zfile.write(result)
         zfile.close()
         result = zbuf.getvalue().decode("utf-8")
+        _log.error(result)
 
         return (result, [('Content-Type', 'text/plain'),
                          ('Content-Encoding', 'gzip')])
