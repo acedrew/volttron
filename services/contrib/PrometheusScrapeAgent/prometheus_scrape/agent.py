@@ -80,7 +80,7 @@ class PrometheusScrapeAgent(Agent):
         zfile = gzip.GzipFile(None, 'wb', 6, zbuf)
         zfile.write(result)
         zfile.close()
-        result = zbuf.getvalue().decode("utf-8")
+        result = zbuf.getvalue()
         _log.error(result)
 
         return (result, [('Content-Type', 'text/plain'),
