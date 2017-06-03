@@ -76,7 +76,7 @@ class PrometheusScrapeAgent(Agent):
             for topic in delete_topics:
                 del self._cache[device][topic]
         gzip_compress = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS | 16)
-        data = gzip_compress.compress(content) + gzip_compress.flush()
+        data = gzip_compress.compress(result) + gzip_compress.flush()
         _log.error(data)
 
         return (data, [('Content-Type', 'text/plain'),
