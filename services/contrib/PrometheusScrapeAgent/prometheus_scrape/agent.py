@@ -4,6 +4,7 @@
 import logging
 import sys
 import re
+import zlib
 from collections import defaultdict
 
 from volttron.platform.agent import utils
@@ -75,7 +76,8 @@ class PrometheusScrapeAgent(Agent):
             for topic in delete_topics:
                 del self._cache[device][topic]
 
-        return (result, [('Content-Type', 'text/plain')])
+        return (zlib.compress(result), [('Content-Type', 'text/plain'),
+                                        ('Content-Encoding', 'gzip')])
 
     def _clean_compat(self, sender, topic, headers, message):
         try:
