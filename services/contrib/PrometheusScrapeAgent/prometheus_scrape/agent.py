@@ -34,7 +34,7 @@ class PrometheusScrapeAgent(Agent):
 
     @Core.receiver("onstart")
     def _starting(self, sender, **kwargs):
-        self.vip.web.register_endpoint('/promscrape', self.scrape)
+        self.vip.web.register_endpoint('/promscrape', self.scrape, "raw")
         self.vip.pubsub.subscribe(peer='pubsub',
                                   prefix=topics.DRIVER_TOPIC_BASE,
                                   callback=self._capture_device_data)
