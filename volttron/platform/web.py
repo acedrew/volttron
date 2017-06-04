@@ -418,7 +418,7 @@ class MasterWebService(Agent):
         return self.volttron_central_address
 
     @RPC.export
-    def register_endpoint(self, endpoint, res_type="jsonrpc"):
+    def register_endpoint(self, endpoint, res_type):
         """
         RPC method to register a dynamic route.
 
