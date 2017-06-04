@@ -5,6 +5,7 @@ import logging
 import sys
 import re
 import zlib
+import base64
 from collections import defaultdict
 
 from volttron.platform.agent import utils
@@ -79,7 +80,7 @@ class PrometheusScrapeAgent(Agent):
                                          zlib.MAX_WBITS | 16)
         data = gzip_compress.compress(result) + gzip_compress.flush()
 
-        return "200 OK", data, [('Content-Type', 'text/plain'),
+        return "200 OK", base64.b64encode(data), [('Content-Type', 'text/plain'),
                                 ('Content-Encoding', 'gzip')]
 
     def _clean_compat(self, sender, topic, headers, message):

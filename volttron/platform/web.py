@@ -61,6 +61,7 @@ import os
 import re
 import requests
 import sys
+import base64
 from urlparse import urlparse, urljoin
 
 from gevent import pywsgi
@@ -637,7 +638,7 @@ class MasterWebService(Agent):
             if len(res) == 3:
                 status, response, headers = res
             start_response(status, headers)
-            return response
+            return base64.b64decode(response)
         else:
             start_response("500 Programming Error",
                            [('Content-Type', 'text/html')])
