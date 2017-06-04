@@ -34,7 +34,7 @@ class PrometheusScrapeAgent(Agent):
 
     @Core.receiver("onstart")
     def _starting(self, sender, **kwargs):
-        self.vip.web.register_endpoint('/promscrape', self.scrape)
+        self.vip.web.register_endpoint('/promscrape', self.scrape, "raw")
         self.vip.pubsub.subscribe(peer='pubsub',
                                   prefix=topics.DRIVER_TOPIC_BASE,
                                   callback=self._capture_device_data)
@@ -75,8 +75,7 @@ class PrometheusScrapeAgent(Agent):
             for topic in delete_topics:
                 del self._cache[device][topic]
 
-        return (result, [('Content-Type', 'text/plain'),
-                         ('Content-Encoding', 'gzip')])
+        return "200 OK", result, [('Content-Type', 'text/plain')]
 
     def _clean_compat(self, sender, topic, headers, message):
         try:
