@@ -47,9 +47,13 @@ def main():
                     caught = True
                     pass
                 if "values" in props and not row[header] in props["values"]:
-                    print("Value of {} must be one of {} found {} on "
-                          "line {}".format(header, ", ".join(props['values']),
-                                           row[header], i + 2))
+                    if row[header].lower() in [x.lower() for x in props["values"]]:
+                        print("Values are case sensitive, found {} on "
+                              "line {}".format(row[header], i + 2))
+                    else:
+                        print("Value of {} must be one of {} found {} on "
+                              "line {}".format(header, ", ".join(
+                                  props['values']), row[header], i + 2))
                     caught = True
             except:
                 continue
