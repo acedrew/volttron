@@ -1,9 +1,5 @@
 import argparse
 import csv
-from os.path import dirname, join
-import os
-import errno
-import subprocess
 import importlib
 
 REQUIRED_HEADERS = {'Reference Point Name': {"type": "str"},
@@ -12,7 +8,7 @@ REQUIRED_HEADERS = {'Reference Point Name': {"type": "str"},
                     'Unit Details': {"type": "str"},
                     'BACnet Object Type': {"type": "str", "values": [
                         "binaryInput", "binaryOutput", "analogInput",
-                        "analogOutput"]
+                        "analogOutput", "binaryValue", "analogValue"]
                         },
                     'Property': {"type": "str", "values": ["presentValue"]},
                     'Writable': {"type": "str", "values": ["TRUE", "FALSE"]},
@@ -30,6 +26,7 @@ def check_type(value, typename):
 
 
 def main():
+    caught = False
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("csv_file", type=argparse.FileType('rb'),
                             help="Input CSV file")
@@ -40,15 +37,24 @@ def main():
         if header not in registry.fieldnames:
             print("Your file is missing or has a malformed header: {}".format(
                 header))
-    for row, i in enumerate(registry):
+            caught = True
+    for i, row in enumerate(registry):
         for header, props in REQUIRED_HEADERS.items():
-            if not check_type(row[header], props['type']):
-                print("check input row: {}, {} not castable to correct"
-                      " type".format(i, header))
-                pass
-            if "values" in props and not row[header] in props["values"]:
-                print("Value of {} must be one of {} found {}".format(
-                    header, props, row[header]))
+            try:
+                if not check_type(row[header], props['type']):
+                    print("check input row: {}, {} not castable to correct"
+                          " type".format(i, header))
+                    caught = True
+                    pass
+                if "values" in props and not row[header] in props["values"]:
+                    print("Value of {} must be one of {} found {} on "
+                          "line {}".format(header, ", ".join(props['values']),
+                                           row[header], i + 2))
+                    caught = True
+            except:
+                continue
+    if not caught:
+        print("No errors detected")
 
 
 if __name__ == "__main__":
