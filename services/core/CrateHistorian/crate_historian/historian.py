@@ -234,11 +234,14 @@ class CrateHistorian(BaseHistorian):
             try:
                 query = insert_data_query(self._schema)
                 _log.debug("Inserting batch data: {}".format(batch_data))
-                cursor.executemany(query, batch_data)
+                results = cursor.executemany(query, batch_data)
             except ProgrammingError as ex:
                 _log.error(
-                    "Invalid data detected during batch insert: {}".format(
-                        ex.args))
+                    "Invalid data detected during {} item batch insert: {}".format(
+                        len(batch_data), ex.args))
+                _log.error(
+                    "Error trace from crateDB is: ".format(ex.error_trace))
+                _log.error("Results are: {}".format(results))
                 _log.debug("Attempting singleton insert.")
                 insert = insert_data_query(self._schema)
                 for id in range(len(batch_data)):
