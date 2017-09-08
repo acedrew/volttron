@@ -426,6 +426,10 @@ class BACnetProxyAgent(Agent):
 
         self.iocb_class = IOCB
         self._max_per_request = max_per_request
+        self._float_values_to_cast_to_string = (
+            float('-Inf'),
+            float('Inf')
+        )
 
         self.setup_device(async_call, device_address,
                           max_apdu_len, seg_supported,
@@ -534,7 +538,7 @@ class BACnetProxyAgent(Agent):
             elif datatype is Real:
                 value = float(value)
                 try:
-                    if value in ["nan", "NaN", "Infinity", "Inf", "-Inf"]:
+                    if value in self._float_values_to_cast_as_string or value != value:
                         value = str(value)
                 except:
                     pass
