@@ -533,6 +533,11 @@ class BACnetProxyAgent(Agent):
                 value = int(value)
             elif datatype is Real:
                 value = float(value)
+                try:
+                    if value in ["nan", "NaN", "Infinity", "Inf", "-Inf"]:
+                        value = str(value)
+                except:
+                    pass
             elif datatype is Unsigned:
                 value = int(value)
             return datatype(value)
