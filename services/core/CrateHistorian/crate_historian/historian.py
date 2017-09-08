@@ -58,17 +58,17 @@ from __future__ import absolute_import, print_function
 # ujson is significantly faster at dump/loading the data from/to the database
 # cache database, I use it in this agent to store/retrieve the string data that
 # can be put into json.
-# try:
-#     import ujson
-#
-#     def dumps(data):
-#         return ujson.dumps(data, double_precision=15)
-#
-#
-#     def loads(data_string):
-#         return ujson.loads(data_string, precise_float=True)
-# except ImportError:
-from zmq.utils.jsonapi import dumps, loads
+try:
+    import ujson
+
+    def dumps(data):
+        return ujson.dumps(data, double_precision=15)
+
+
+    def loads(data_string):
+        return ujson.loads(data_string, precise_float=True)
+except ImportError:
+    from zmq.utils.jsonapi import dumps, loads
 
 import logging
 import sys
