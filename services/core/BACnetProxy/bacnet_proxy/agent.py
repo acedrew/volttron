@@ -541,7 +541,7 @@ class BACnetProxyAgent(Agent):
             elif datatype is Real:
                 value = float(value)
                 try:
-                    if str(value).lower() in self._float_values_to_cast_as_string:
+                    if str(value).lower() in self._float_values_to_cast_to_string:
                         value = str(value)
                 except:
                     pass
