@@ -240,7 +240,7 @@ class CrateHistorian(BaseHistorian):
                     "Invalid data detected during {} item batch insert: {}".format(
                         len(batch_data), ex.args))
                 _log.error(
-                    "Error trace from crateDB is: ".format(ex.error_trace))
+                    "Error trace from crateDB is: ".format(str(ex.error_trace)))
                 _log.debug("Attempting singleton insert.")
                 insert = insert_data_query(self._schema)
                 for id in range(len(batch_data)):
