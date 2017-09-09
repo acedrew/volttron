@@ -432,7 +432,7 @@ class BACnetProxyAgent(Agent):
             'inf',
             'nan',
             '-inf'
-        )
+        ))
 
         self.setup_device(async_call, device_address,
                           max_apdu_len, seg_supported,
