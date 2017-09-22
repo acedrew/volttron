@@ -73,7 +73,7 @@ from ws4py.websocket import WebSocket
 from ws4py.server.geventserver import (WebSocketWSGIApplication,
                                        WebSocketWSGIHandler,
                                        WSGIServer)
-
+import zlib
 
 import mimetypes
 
@@ -187,6 +187,32 @@ def is_ip_private(vip_address):
     return priv_lo.match(ip) is not None or priv_24.match(
         ip) is not None or priv_20.match(ip) is not None or priv_16.match(
         ip) is not None
+
+
+class WebResponse(object):
+    """ The WebResponse object is a serializable representation of
+    a response to an http(s) client request that can be transmitted
+    through the RPC subsystem to the appropriate platform's MasterWebAgent
+    """
+
+    def __init__(self, status, data, headers):
+        self.status = status
+        self.headers = self.process_headers(headers)
+        self.data = self.process_data(data)
+
+    def process_headers(self, headers):
+        return [(key, value) for key, value in headers.items()]
+
+    def process_data(self, data):
+        if type(data) == bytes:
+            self.base64 = True
+            data = base64.b64encode(data)
+        elif type(data) == str:
+            self.base64 = False
+        else:
+            raise TypeError("Response data is neither bytes nor string type")
+        return data
+
 
 
 class VolttronWebSocket(WebSocket):
@@ -496,7 +522,13 @@ class MasterWebService(Agent):
         identity = bytes(self.vip.rpc.context.vip_message.peer)
         _log.debug('Caller identity: {}'.format(identity))
         _log.debug('REGISTERING ENDPOINT: {}'.format(endpoint))
-        self.appContainer.create_ws_endpoint(endpoint, identity)
+        if self.appContainer:
+            self.appContainer.create_ws_endpoint(endpoint, identity)
+        else:
+            _log.error('Attempting to register endpoint without web'
+                       'subsystem initialized')
+            raise AttributeError("self does not contain"
+                                 " attribute appContainer")
 
     @RPC.export
     def unregister_websocket(self, endpoint):
@@ -582,7 +614,8 @@ class MasterWebService(Agent):
         # only expose a partial list of the env variables to the registered
         # agents.
         envlist = ['HTTP_USER_AGENT', 'PATH_INFO', 'QUERY_STRING',
-                   'REQUEST_METHOD', 'SERVER_PROTOCOL', 'REMOTE_ADDR']
+                   'REQUEST_METHOD', 'SERVER_PROTOCOL', 'REMOTE_ADDR',
+                   'HTTP_ACCEPT_ENCODING']
         data = env['wsgi.input'].read()
         passenv = dict(
             (envlist[i], env[envlist[i]]) for i in range(0, len(envlist)) if envlist[i] in env.keys())
@@ -636,7 +669,9 @@ class MasterWebService(Agent):
         if isinstance(res, tuple) or isinstance(res, list):
             if len(res) == 1:
                 status, = res
+                headers = ()
             if len(res) == 2:
+                headers = ()
                 status, response = res
             if len(res) == 3:
                 status, response, headers = res
@@ -679,8 +714,15 @@ class MasterWebService(Agent):
                 return [b'Invalid response tuple (must contain 2 elements)']
 
             response, headers = res
-            start_response('200 OK', headers)
-            return response
+            header_dict = dict(headers)
+            if header_dict.get('Content-Encoding', None) == 'gzip':
+                gzip_compress = zlib.compressobj(9, zlib.DEFLATED,
+                                                 zlib.MAX_WBITS | 16)
+                data = gzip_compress.compress(response) + gzip_compress.flush()
+                start_response('200 OK', headers)
+                return data
+            else:
+                return response
         else:
             start_response('200 OK',
                            [('Content-Type', 'application/json')])

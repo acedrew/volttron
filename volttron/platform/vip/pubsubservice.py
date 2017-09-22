@@ -76,10 +76,11 @@ import zmq
 from zmq import SNDMORE, EHOSTUNREACH, ZMQError, EAGAIN, NOBLOCK
 from zmq import green
 from collections import defaultdict
+from zmq.utils import jsonapi
 
 # Create a context common to the green and non-green zmq modules.
 green.Context._instance = green.Context.shadow(zmq.Context.instance().underlying)
-from zmq.utils import jsonapi
+
 from volttron.platform.agent.utils import watch_file, create_file_if_missing
 from .agent.subsystems.pubsub import ProtectedPubSubTopics
 from .. import jsonrpc
@@ -90,7 +91,6 @@ _ROUTE_ERRORS = {
              zmq.Frame(os.strerror(errnum).encode('ascii')))
     for errnum in [zmq.EHOSTUNREACH, zmq.EAGAIN]
 }
-
 
 class PubSubService(object):
     def __init__(self, socket, protected_topics, *args, **kwargs):
@@ -253,8 +253,9 @@ class PubSubService(object):
                 peer = frames[0].bytes
                 bus = msg['bus']
                 pub_msg = jsonapi.dumps(
-                    dict(sender=peer, bus=bus, headers=headers, message=message)
+                     dict(sender=peer, bus=bus, headers=headers, message=message)
                 )
+                #self._logger.debug("PLATFORM PUBSUB: Publish msg: {}".format(pub_msg))
                 frames[8] = zmq.Frame(str(pub_msg))
             except ValueError:
                 self._logger.debug("JSON decode error. Invalid character")

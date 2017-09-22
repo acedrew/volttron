@@ -67,7 +67,7 @@ _log = logging.getLogger(__name__)
 
 bacnet_logger = logging.getLogger("bacpypes")
 bacnet_logger.setLevel(logging.WARNING)
-__version__ = '0.3'
+__version__ = '0.3.1'
 
 import os.path
 import errno
@@ -426,6 +426,13 @@ class BACnetProxyAgent(Agent):
 
         self.iocb_class = IOCB
         self._max_per_request = max_per_request
+        self._float_values_to_cast_to_string = frozenset((
+            'infinity',
+            '+inf',
+            'inf',
+            'nan',
+            '-inf'
+        ))
 
         self.setup_device(async_call, device_address,
                           max_apdu_len, seg_supported,
@@ -727,6 +734,8 @@ class BACnetProxyAgent(Agent):
                                               target=target_address))
 
                 for prop_tuple, value in bacnet_results.iteritems():
+                    if str(value).lower() in self._float_values_to_cast_to_string:
+                        value = str(value)
                     name = reverse_point_map[prop_tuple]
                     result_dict[name] = value
 
