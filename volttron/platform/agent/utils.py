@@ -64,14 +64,13 @@ import logging
 import sys
 import syslog
 import traceback
-from datetime import datetime, tzinfo, timedelta
+from datetime import datetime
 
 import gevent
 import os
 import pytz
 import re
 import stat
-import time
 from volttron.platform import get_home, get_address
 from dateutil.parser import parse
 from dateutil.tz import tzutc, tzoffset
@@ -116,7 +115,7 @@ def is_valid_identity(identity_to_check):
         return False
 
     return _VALID_IDENTITY_RE.match(identity_to_check)
-    
+
 
 def _repl(match):
     """Replace the matched group with an appropriate string."""
@@ -138,11 +137,13 @@ def strip_comments(string):
 def load_config(config_path):
     """Load a JSON-encoded configuration file."""
     if config_path is None:
-        _log.info("AGENT_CONFIG does not exist in environment. load_config returning empty configuration.")
+        _log.info("AGENT_CONFIG does not exist in environment. load_config "
+                  "returning empty configuration.")
         return {}
 
     if not os.path.exists(config_path):
-        _log.info("Config file specified by AGENT_CONFIG does not exist. load_config returning empty configuration.")
+        _log.info("Config file specified by AGENT_CONFIG does not exist. "
+                  "load_config returning empty configuration.")
         return {}
 
     try:
@@ -152,16 +153,17 @@ def load_config(config_path):
         _log.error("Problem parsing agent configuration")
         raise
 
+
 def update_kwargs_with_config(kwargs, config):
     """
     Loads the user defined configurations into kwargs.
-     
+
       1. Converts any dash/hyphen in config variables into underscores
-      2. Checks for configured "identity" value. Prints a deprecation 
-      warning and uses it. 
-      3. Checks for configured "agentid" value. Prints a deprecation warning 
+      2. Checks for configured "identity" value. Prints a deprecation
+      warning and uses it.
+      3. Checks for configured "agentid" value. Prints a deprecation warning
       and ignores it
-      
+
     :param kwargs: kwargs to be updated
     :param config: dictionary of user/agent configuration
     """
@@ -187,7 +189,8 @@ def update_kwargs_with_config(kwargs, config):
         config.pop('agentid')
 
     for k, v in config.items():
-        kwargs[k.replace("-","_")] = v
+        kwargs[k.replace("-", "_")] = v
+
 
 def parse_json_config(config_str):
     """Parse a JSON-encoded configuration file."""
@@ -293,8 +296,8 @@ def vip_main(agent_class, identity=None, version='0.1', **kwargs):
             if not is_valid_identity(identity):
                 _log.warn('Deprecation warining')
                 _log.warn(
-                    'All characters in {identity} are not in the valid set.'
-                    .format(idenity=identity))
+                    'All characters in {identity} are not '
+                    'in the valid set.'.format(idenity=identity))
 
         address = get_address()
         agent_uuid = os.environ.get('AGENT_UUID')
@@ -304,7 +307,7 @@ def vip_main(agent_class, identity=None, version='0.1', **kwargs):
                             address=address, agent_uuid=agent_uuid,
                             volttron_home=volttron_home,
                             version=version, **kwargs)
-        
+
         try:
             run = agent.run
         except AttributeError:
@@ -363,7 +366,7 @@ class AgentFormatter(logging.Formatter):
                 and 'tornado.access' in record.__dict__['composite_name']:
             record.__dict__['msg'] = ','.join([str(b) for b in record.args])
             record.__dict__['args'] = []
-        return super(AgentFormatter, self).format(record)
+        return "volttron: " + super(AgentFormatter, self).format(record)
 
 
 def setup_logging(level=logging.DEBUG):
@@ -383,10 +386,10 @@ def setup_logging(level=logging.DEBUG):
 def format_timestamp(time_stamp):
     """Create a consistent datetime string representation based on
     ISO 8601 format.
-    
+
     YYYY-MM-DDTHH:MM:SS.mmmmmm for unaware datetime objects.
     YYYY-MM-DDTHH:MM:SS.mmmmmm+HH:MM for aware datetime objects
-    
+
     :param time_stamp: value to convert
     :type time_stamp: datetime
     :returns: datetime in string format
@@ -437,8 +440,9 @@ def parse_timestamp_string(time_stamp_str):
         try:
             base_time_stamp_str = time_stamp_str[:26]
             time_zone_str = time_stamp_str[26:]
-            time_stamp = datetime.strptime(base_time_stamp_str, "%Y-%m-%dT%H:%M:%S.%f")
-            #Handle most common case.
+            time_stamp = datetime.strptime(
+                base_time_stamp_str, "%Y-%m-%dT%H:%M:%S.%f")
+            # Handle most common case.
             if time_zone_str == "+00:00":
                 return time_stamp.replace(tzinfo=pytz.UTC)
 
@@ -459,7 +463,7 @@ def parse_timestamp_string(time_stamp_str):
 
 def get_aware_utc_now():
     """Create a timezone aware UTC datetime object from the system time.
-    
+
     :returns: an aware UTC datetime object
     :rtype: datetime
     """
@@ -527,13 +531,15 @@ def watch_file(fullpath, callback):
     """
     dirname, filename = os.path.split(fullpath)
     if inotify is None:
-        _log.warning("Runtime changes to: %s not supported on this platform.", fullpath)
+        _log.warning("Runtime changes to: %s not"
+                     "supported on this platform.", fullpath)
     else:
         with inotify() as inot:
             inot.add_watch(dirname, IN_MODIFY)
             for event in inot:
                 if event.name == filename and event.mask & IN_MODIFY:
                     callback()
+
 
 def watch_file_with_fullpath(fullpath, callback):
     """Run callback method whenever the file changes
@@ -542,7 +548,8 @@ def watch_file_with_fullpath(fullpath, callback):
     """
     dirname, filename = os.path.split(fullpath)
     if inotify is None:
-        _log.warning("Runtime changes to: %s not supported on this platform.", fullpath)
+        _log.warning("Runtime changes to: %s not supported "
+                     "on this platform.", fullpath)
     else:
         with inotify() as inot:
             inot.add_watch(dirname, IN_MODIFY)
@@ -577,12 +584,12 @@ def create_file_if_missing(path, permission=0o660, contents=None):
 def fix_sqlite3_datetime(sql=None):
     """Primarily for fixing the base historian cache on certain versions
     of python.
-    
+
     Registers a new datetime converter to that uses dateutil parse. This
     should
     better resolve #216, #174, and #91 without the goofy workarounds that
     change data.
-    
+
     Optional sql argument is for testing only.
     """
     if sql is None:
