@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*- {{{
 # vim: set fenc=utf-8 ft=python sw=4 ts=4 sts=4 et:
 
-# Copyright (c) 2016, Battelle Memorial Institute
+# Copyright (c) 2017, Battelle Memorial Institute
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -76,7 +76,7 @@ from volttron.platform import get_home, get_address
 from dateutil.parser import parse
 from dateutil.tz import tzutc, tzoffset
 from tzlocal import get_localzone
-from zmq.utils import jsonapi
+from volttron.platform.agent import json as jsonapi
 
 try:
     from ..lib.inotify.green import inotify, IN_MODIFY
@@ -116,7 +116,24 @@ def is_valid_identity(identity_to_check):
         return False
 
     return _VALID_IDENTITY_RE.match(identity_to_check)
-    
+
+
+def normalize_identity(pre_identity):
+    if is_valid_identity(pre_identity):
+        return pre_identity
+
+    if pre_identity is None:
+        raise ValueError("Identity cannot be none.")
+
+    norm = ""
+    for s in pre_identity:
+        if _VALID_IDENTITY_RE.match(s):
+            norm += s
+        else:
+            norm += '_'
+
+    return norm
+
 
 def _repl(match):
     """Replace the matched group with an appropriate string."""
@@ -155,13 +172,13 @@ def load_config(config_path):
 def update_kwargs_with_config(kwargs, config):
     """
     Loads the user defined configurations into kwargs.
-     
+
       1. Converts any dash/hyphen in config variables into underscores
-      2. Checks for configured "identity" value. Prints a deprecation 
-      warning and uses it. 
-      3. Checks for configured "agentid" value. Prints a deprecation warning 
+      2. Checks for configured "identity" value. Prints a deprecation
+      warning and uses it.
+      3. Checks for configured "agentid" value. Prints a deprecation warning
       and ignores it
-      
+
     :param kwargs: kwargs to be updated
     :param config: dictionary of user/agent configuration
     """
@@ -304,7 +321,7 @@ def vip_main(agent_class, identity=None, version='0.1', **kwargs):
                             address=address, agent_uuid=agent_uuid,
                             volttron_home=volttron_home,
                             version=version, **kwargs)
-        
+
         try:
             run = agent.run
         except AttributeError:
@@ -363,7 +380,7 @@ class AgentFormatter(logging.Formatter):
                 and 'tornado.access' in record.__dict__['composite_name']:
             record.__dict__['msg'] = ','.join([str(b) for b in record.args])
             record.__dict__['args'] = []
-        return super(AgentFormatter, self).format(record)
+        return "volttron: " + super(AgentFormatter, self).format(record)
 
 
 def setup_logging(level=logging.DEBUG):
@@ -383,10 +400,10 @@ def setup_logging(level=logging.DEBUG):
 def format_timestamp(time_stamp):
     """Create a consistent datetime string representation based on
     ISO 8601 format.
-    
+
     YYYY-MM-DDTHH:MM:SS.mmmmmm for unaware datetime objects.
     YYYY-MM-DDTHH:MM:SS.mmmmmm+HH:MM for aware datetime objects
-    
+
     :param time_stamp: value to convert
     :type time_stamp: datetime
     :returns: datetime in string format
@@ -459,7 +476,7 @@ def parse_timestamp_string(time_stamp_str):
 
 def get_aware_utc_now():
     """Create a timezone aware UTC datetime object from the system time.
-    
+
     :returns: an aware UTC datetime object
     :rtype: datetime
     """
@@ -577,12 +594,12 @@ def create_file_if_missing(path, permission=0o660, contents=None):
 def fix_sqlite3_datetime(sql=None):
     """Primarily for fixing the base historian cache on certain versions
     of python.
-    
+
     Registers a new datetime converter to that uses dateutil parse. This
     should
     better resolve #216, #174, and #91 without the goofy workarounds that
     change data.
-    
+
     Optional sql argument is for testing only.
     """
     if sql is None:
