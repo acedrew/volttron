@@ -31,6 +31,7 @@ class PrometheusScrapeAgent(Agent):
             self._config_dict = utils.load_config(config_path)
         self._cache = defaultdict(dict)
         self._cache_time = self._config_dict.get('cache_timeout', 660)
+        self._metatags = self._config_dict.get('metatags', None)
         self._tag_delimiter_re = self._config_dict.get('tag_delimiter_re',
                                                        "\s+|:|_|\.|/")
 
@@ -57,6 +58,7 @@ class PrometheusScrapeAgent(Agent):
             for device, device_topics in self._cache.iteritems():
                 device_tags = device.replace("-", "_").split('/')
                 for topic, value in device_topics.iteritems():
+                    full_topic_string = "{}/{}".format(device, topic)
                     if value[1] + self._cache_time > scrape_time:
                         metric_props = re.split(self._tag_delimiter_re,
                                                 topic.lower())
@@ -65,6 +67,10 @@ class PrometheusScrapeAgent(Agent):
                             "device=\"{}\",").format(*device_tags)
                         for i, prop in enumerate(metric_props):
                             metric_tag_str += "tag{}=\"{}\",".format(i, prop)
+                        if self._metatags and full_topic_string in self._metatags:
+                            for metatag, value in self._metatags[full_topic_string]:
+                                metric_tag_str += "{}=\"{}\"".format(
+                                    metatag, value)
                         result += "{}{{{}topic=\"{}\"}} {}\n".format(
                             re.sub(" |/|-", "_", device), metric_tag_str,
                             topic.replace(" ", "_"), value[0])
