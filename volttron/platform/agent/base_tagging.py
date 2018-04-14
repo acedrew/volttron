@@ -1,57 +1,38 @@
 # -*- coding: utf-8 -*- {{{
 # vim: set fenc=utf-8 ft=python sw=4 ts=4 sts=4 et:
-
-# Copyright (c) 2016, Battelle Memorial Institute
-# All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
+# Copyright 2017, Battelle Memorial Institute.
 #
-# 1. Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# http://www.apache.org/licenses/LICENSE-2.0
 #
-# The views and conclusions contained in the software and documentation
-# are those of the authors and should not be interpreted as representing
-# official policies, either expressed or implied, of the FreeBSD
-# Project.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
-# This material was prepared as an account of work sponsored by an
-# agency of the United States Government.  Neither the United States
-# Government nor the United States Department of Energy, nor Battelle,
-# nor any of their employees, nor any jurisdiction or organization that
-# has cooperated in the development of these materials, makes any
-# warranty, express or implied, or assumes any legal liability or
-# responsibility for the accuracy, completeness, or usefulness or any
-# information, apparatus, product, software, or process disclosed, or
-# represents that its use would not infringe privately owned rights.
-#
-# Reference herein to any specific commercial product, process, or
-# service by trade name, trademark, manufacturer, or otherwise does not
-# necessarily constitute or imply its endorsement, recommendation, or
+# This material was prepared as an account of work sponsored by an agency of
+# the United States Government. Neither the United States Government nor the
+# United States Department of Energy, nor Battelle, nor any of their
+# employees, nor any jurisdiction or organization that has cooperated in the
+# development of these materials, makes any warranty, express or
+# implied, or assumes any legal liability or responsibility for the accuracy,
+# completeness, or usefulness or any information, apparatus, product,
+# software, or process disclosed, or represents that its use would not infringe
+# privately owned rights. Reference herein to any specific commercial product,
+# process, or service by trade name, trademark, manufacturer, or otherwise
+# does not necessarily constitute or imply its endorsement, recommendation, or
 # favoring by the United States Government or any agency thereof, or
-# Battelle Memorial Institute. The views and opinions of authors
-# expressed herein do not necessarily state or reflect those of the
+# Battelle Memorial Institute. The views and opinions of authors expressed
+# herein do not necessarily state or reflect those of the
 # United States Government or any agency thereof.
 #
-# PACIFIC NORTHWEST NATIONAL LABORATORY
-# operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
+# PACIFIC NORTHWEST NATIONAL LABORATORY operated by
+# BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
 # }}}
 
@@ -61,26 +42,27 @@ for users to associate haystack based tags and values to topic names and
 topic name prefixes.
 
 Implementing classes should implement the following methods
-- :py:meth:`BaseTaggingService.setup`
-- :py:meth:`BaseTaggingService.load_valid_tags`
-- :py:meth:`BaseTaggingService.load_tag_refs`
-- :py:meth:`BaseTaggingService.query_categories`
-- :py:meth:`BaseTaggingService.query_tags_by_category`
-- :py:meth:`BaseTaggingService.query_tags_by_topic`
-- :py:meth:`BaseTaggingService.query_topics_by_tags`
-- :py:meth:`BaseTaggingService.insert_topic_tags`
+
+  - :py:meth:`BaseTaggingService.setup`
+  - :py:meth:`BaseTaggingService.load_valid_tags`
+  - :py:meth:`BaseTaggingService.load_tag_refs`
+  - :py:meth:`BaseTaggingService.query_categories`
+  - :py:meth:`BaseTaggingService.query_tags_by_category`
+  - :py:meth:`BaseTaggingService.query_tags_by_topic`
+  - :py:meth:`BaseTaggingService.query_topics_by_tags`
+  - :py:meth:`BaseTaggingService.insert_topic_tags`
 
 On start calls the following methods
-- :py:meth:`BaseTaggingService.setup`
-- :py:meth:`BaseTaggingService.load_valid_tags`
-- :py:meth:`BaseTaggingService.load_tag_refs`
+
+  - :py:meth:`BaseTaggingService.setup`
+  - :py:meth:`BaseTaggingService.load_valid_tags`
+  - :py:meth:`BaseTaggingService.load_tag_refs`
 
 Querying for topics based on tags
 ---------------------------------
 Base tagging service provides a parser to parse query
 condition for querying topics based on tags. Please see documentation of
-- :py:meth:`BaseTaggingService.get_topics_by_tags` for syntax definition of
-query
+:py:meth:`BaseTaggingService.get_topics_by_tags` for syntax definition of query
 
 """
 
@@ -97,6 +79,7 @@ from volttron.platform.vip.agent.errors import Unreachable
 
 
 _log = logging.getLogger(__name__)
+
 
 class BaseTaggingService(Agent):
     """This is the base class for tagging service implementations. There can
@@ -120,7 +103,12 @@ class BaseTaggingService(Agent):
     @Core.receiver("onstart")
     def on_start(self, sender, **kwargs):
         """
-        Called on start of agent. Calls the setup method
+        Called on start of agent. Calls the methods
+
+        - :py:meth:`BaseTaggingService.setup`
+        - :py:meth:`BaseTaggingService.load_valid_tags`
+        - :py:meth:`BaseTaggingService.load_tag_refs`
+
         """
         # load resources and make it available for implementing classes
         # Implementing classes can load this and/or other (additional) files
@@ -164,22 +152,23 @@ class BaseTaggingService(Agent):
     def get_categories(self, include_description=False, skip=0, count=None,
                        order="FIRST_TO_LAST"):
         """
-        Get the available list tag categories. category can have multiple tags 
+        Get the available list tag categories. category can have multiple tags
         and tags could belong to multiple categories
 
-        :param include_description: indicate if result should include 
-        available description for categories returned
+        :param include_description: indicate if result should include
+         available description for categories returned
         :param skip: number of tags to skip. usually used with order
         :param count: limit on the number of tags to return
-        :param order: order of result - "FIRST_TO_LAST" or
-                      "LAST_TO_FIRST"
+        :param order: order of result - "FIRST_TO_LAST" or "LAST_TO_FIRST"
+        :type include_description: bool
         :type skip: int
         :type count: int
         :type order: str
-        :return: list of category names if include_description is False, 
-        list of (category name, description) if include_description is True
+        :return: list of category names if include_description is False,
+         list of (category name, description) if include_description is True
         :rtype: list
         """
+
         _log.debug("query params: skip:{} count:{} order:{}".format(skip,
                                                                     count,
                                                                     order))
@@ -189,25 +178,24 @@ class BaseTaggingService(Agent):
     def query_categories(self, include_description=False, skip=0, count=None,
                          order="FIRST_TO_LAST"):
         """
+
         Get the available list tag categories. category can have
-        multiple tags
-        and tags could belong to multiple categories
+        multiple tags and tags could belong to multiple categories
 
         :param include_description: indicate if result should include
-        available description for categories returned
+         available description for categories returned
         :param skip: number of tags to skip. usually used with order
         :param count: limit on the number of tags to return
-        :param order: order of result - "FIRST_TO_LAST" or
-                      "LAST_TO_FIRST"
+        :param order: order of result - "FIRST_TO_LAST" or "LAST_TO_FIRST"
+        :type include_description: bool
         :type skip: int
         :type count: int
         :type order: str
-        :return: list of category names if include_description is
-        False,
-        list of (category name, description) if include_description
-        is True
+        :return: list of category names if include_description is False,
+         list of (category name, description) if include_description is True
         :rtype: list
         """
+
         pass
 
     @RPC.export
@@ -219,24 +207,25 @@ class BaseTaggingService(Agent):
         multiple tags and tags could belong to multiple categories
         
         :param category: name of the category for which associated tags 
-        should be returned
+         should be returned
         :param include_kind: indicate if result should include the 
-        kind/datatype for tags returned
+         kind/datatype for tags returned
         :param include_description: indicate if result should include 
-        available description for tags returned
+         available description for tags returned
         :param skip: number of tags to skip. usually used with order
         :param count: limit on the number of tags to return
-        :param order: order of result - "FIRST_TO_LAST" or
-                      "LAST_TO_FIRST"
+        :param order: order of result - "FIRST_TO_LAST" or "LAST_TO_FIRST"
         :return: Will return one of the following
         
           - list of tag names  
           - list of (tags, its data type/kind) if include_kind is True 
           - list of (tags, description) if include_description is True
-          - list of (tags, its data type/kind, description) if 
-          include_kind is True and include_description is true
+          - list of (tags, its data type/kind, description) if include_kind
+            is True and include_description is true
           
         :type category: str
+        :type include_kind: bool
+        :type include_description: bool
         :type skip: int
         :type count: int
         :type order: str
@@ -251,35 +240,35 @@ class BaseTaggingService(Agent):
                              include_description=False, skip=0, count=None,
                              order="FIRST_TO_LAST"):
         """
-        Get the list of tags for a given category name. category can
-        have
+        Get the list of tags for a given category name. category can have
         multiple tags and tags could belong to multiple categories
 
-        :param category: name of the category for which associated
-        tags
-        should be returned
+        :param category: name of the category for which associated tags
+         should be returned
         :param include_kind: indicate if result should include the
-        kind/datatype for tags returned
+         kind/datatype for tags returned
         :param include_description: indicate if result should include
-        available description for tags returned
+         available description for tags returned
         :param skip: number of tags to skip. usually used with order
         :param count: limit on the number of tags to return
-        :param order: order of result - "FIRST_TO_LAST" or
-                      "LAST_TO_FIRST"
+        :param order: order of result - "FIRST_TO_LAST" or "LAST_TO_FIRST"
         :return: Will return one of the following
 
           - list of tag names
           - list of (tags, its data type/kind) if include_kind is True
           - list of (tags, description) if include_description is True
           - list of (tags, its data type/kind, description) if
-          include_kind is True and include_description is true
+            include_kind is True and include_description is true
 
         :type category: str
+        :type include_kind: bool
+        :type include_description: bool
         :type skip: int
         :type count: int
         :type order: str
         :rtype: list
         """
+
         pass
 
     @RPC.export
@@ -287,17 +276,17 @@ class BaseTaggingService(Agent):
                              include_description=False, skip=0, count=None,
                              order="FIRST_TO_LAST"):
         """
-        Get the list of tags for a given topic prefix or name. 
+        Get the list of tags for a given topic prefix or name.
+
         :param topic_prefix: topic_prefix for which associated tags should 
-        be returned
+         be returned
         :param include_kind: indicate if result should include the 
-        kind/datatype for tags returned
+         kind/datatype for tags returned
         :param include_description: indicate if result should include 
-        available description for tags returned
+         available description for tags returned
         :param skip: number of tags to skip. usually used with order
         :param count: limit on the number of tags to return
-        :param order: order of result - "FIRST_TO_LAST" or
-                      "LAST_TO_FIRST"
+        :param order: order of result - "FIRST_TO_LAST" or  "LAST_TO_FIRST"
         :return: Will return one of the following
         
           - list of (tag name, value)
@@ -305,8 +294,10 @@ class BaseTaggingService(Agent):
           - list of (tag name, value, description) if include_description is True
           - list of (tags, value, data type/kind, description) if
           include_kind is True and include_description is true
-          
+
         :type topic_prefix: str
+        :type include_kind: bool
+        :type include_description: bool
         :type skip: int
         :type count: int
         :type order: str
@@ -323,33 +314,34 @@ class BaseTaggingService(Agent):
                             order="FIRST_TO_LAST"):
         """
         Get the list of tags for a given topic prefix or name.
-        :param topic_prefix: topic_prefix for which associated tags
-        should
-        be returned
+
+        :param topic_prefix: topic_prefix for which associated tags should
+         be returned
         :param include_kind: indicate if result should include the
-        kind/datatype for tags returned
+         kind/datatype for tags returned
         :param include_description: indicate if result should include
-        available description for tags returned
+         available description for tags returned
         :param skip: number of tags to skip. usually used with order
         :param count: limit on the number of tags to return
-        :param order: order of result - "FIRST_TO_LAST" or
-                      "LAST_TO_FIRST"
+        :param order: order of result - "FIRST_TO_LAST" or "LAST_TO_FIRST"
         :return: Will return one of the following
 
           - list of (tag name, value)
-          - list of (tag name, value, data type/kind) if
-          include_kind is True
+          - list of (tag name, value, data type/kind) if include_kind is True
           - list of (tag name, value, description) if
-          include_description is True
+            include_description is True
           - list of (tags, value, data type/kind, description) if
-          include_kind is True and include_description is true
+            include_kind is True and include_description is true
 
         :type topic_prefix: str
+        :type include_kind: bool
+        :type include_description: bool
         :type skip: int
         :type count: int
         :type order: str
         :rtype: list
         """
+
         pass
 
     @RPC.export
@@ -362,41 +354,46 @@ class BaseTaggingService(Agent):
         method :py:meth:`BaseTaggingService.query_topics_by_tags` of the
         implementing service to further process the ast and return list of
         topic prefixes
-        :param and_condition: dictionary of tag and its corresponding values that
-        should be matched using equality operator or a list of tags that should
-        exists/be true. Tag conditions are combined with AND condition. Only
-        topics that match all the tags in the list would be returned
-        :param or_condition: dictionary of tag and its corresponding values
-        that should be matched using equality operator or a list tags that
-        should exist/be true. Tag conditions are combined with OR condition.
-        Topics that match any of the tags in the list would be returned.
-        If both and_condition and or_condition are provided then they
-        are combined using AND operator.
-        :param condition: conditional statement to be used for matching tags.
-        If this parameter is provided the above two parameters are ignored.
-        The value for this parameter should be an expression that contains one 
-        or more query conditions combined together with an "AND" or "OR".
-        Query conditions can be grouped together using parenthesis.
-        Each condition in the expression should conform to one of the 
-        following format:
 
-        1. <tag name/ parent.tag_name> <binary_operator> <value>
-        2. <tag name/ parent.tag_name> 
-        3. <tag name/ parent.tag_name> LIKE <regular expression within single
-           quotes
-        4. parent tag used in query(using format parent.tag_name) should be of
-           type/kind Ref. For example, campusRef.geoPostalCode = "99353"
-        5. the word NOT can be prefixed before any of the above three to negate
-           the condition.
-        6. expressions can be grouped with parenthesis. For example
-        
-          .. code-block:: python
-        
-            condition="(tag1 = 1 or tag1 = 2) and (tag2 < '' and tag2 >
-            '') and tag3 and  (tag4 LIKE '^a.*b$')"
-            condition="NOT (tag5='US' OR tag5='UK') AND NOT tag3 AND NOT (tag4
-            LIKE 'a.*')"
-            condition="campusRef.geoPostalCode='20500' and equip and boiler"
+        :param and_condition: dictionary of tag and its corresponding values
+         that should be matched using equality operator or a list of tags
+         that should exists/be true. Tag conditions are combined with AND
+         condition. Only topics that match all the tags in the list would be
+         returned
+        :param or_condition: dictionary of tag and its corresponding values
+         that should be matched using equality operator or a list tags that
+         should exist/be true. Tag conditions are combined with OR condition.
+         Topics that match any of the tags in the list would be returned.
+         If both and_condition and or_condition are provided then they
+         are combined using AND operator.
+        :param condition: conditional statement to be used for matching tags.
+         If this parameter is provided the above two parameters are ignored.
+         The value for this parameter should be an expression that contains one
+         or more query conditions combined together with an "AND" or "OR".
+         Query conditions can be grouped together using parenthesis.
+         Each condition in the expression should conform to one of the
+         following format:
+
+            1. <tag name/ parent.tag_name> <binary_operator> <value>
+            2. <tag name/ parent.tag_name>
+            3. <tag name/ parent.tag_name> LIKE <regular expression within
+               single quotes
+            4. parent tag used in query(using format parent.tag_name) should be
+               of type/kind Ref. For example, campusRef.geoPostalCode = "99353"
+            5. the word NOT can be prefixed before any of the above three to
+               negate the condition.
+            6. expressions can be grouped with parenthesis.
+
+            Example
+              .. code-block:: python
+
+                condition="(tag1 = 1 or tag1 = 2) and (tag2 < '' and tag2 >
+                '') and tag3 and  (tag4 LIKE '^a.*b$')"
+
+                condition="NOT (tag5='US' OR tag5='UK') AND NOT tag3 AND
+                NOT (tag4 LIKE 'a.*')"
+
+                condition="campusRef.geoPostalCode='20500' and equip and boiler"
 
         :param skip: number of tags to skip. usually used with order
         :param count: limit on the number of tags to return
@@ -410,7 +407,7 @@ class BaseTaggingService(Agent):
         :type count: int
         :type order: str
         :return: list of topics/topic_prefix that match the given query 
-        conditions
+         conditions
         :rtype: list
         """
 
@@ -438,56 +435,52 @@ class BaseTaggingService(Agent):
         return self.query_topics_by_tags(ast=ast, skip=skip, count=count,
                                          order=order)
 
-
     @abstractmethod
     def query_topics_by_tags(self, ast, skip=0, count=None, order=None):
         """
         Get list of topic names and topic name prefixes based on query
         condition. Query condition is passed as an abstract syntax tree.
+
         :param ast: Abstract syntax tree that represents conditional statement
-        to be used for matching tags. The abstract syntax tree represents
-        query condition that is created using the following specification
+         to be used for matching tags. The abstract syntax tree represents
+         query condition that is created using the following specification
 
-        Query condition is a boolean expression that contains one
-        or more query conditions combined together with an "AND" or "OR".
-        Query conditions can be grouped together using parenthesis.
-        Each condition in the expression should conform to one of the
-        following format:
+         Query condition is a boolean expression that contains one
+         or more query conditions combined together with an "AND" or "OR".
+         Query conditions can be grouped together using parenthesis.
+         Each condition in the expression should conform to one of the
+         following format:
 
-        1. <tag name/ parent.tag_name> <binary_operator> <value>
-        2. <tag name/ parent.tag_name>
-        3. <tag name/ parent.tag_name> LIKE <regular expression
-        within single
-           quotes
-        4. the word NOT can be prefixed before any of the above
-        three to negate
-           the condition.
-        5. expressions can be grouped with parenthesis. For example
+            1. <tag name/ parent.tag_name> <binary_operator> <value>
+            2. <tag name/ parent.tag_name>
+            3. <tag name/ parent.tag_name> LIKE <regular expression
+               within single quotes
+            4. the word NOT can be prefixed before any of the above
+               three to negate the condition.
+            5. expressions can be grouped with parenthesis. For example
 
-          .. code-block:: python
+               .. code-block:: python
 
-            condition="(tag1 = 1 or tag1 = 2) and (tag2 < '' and tag2 >
-            '') and tag3 and  (tag4 LIKE '^a.*b$')"
-            condition="NOT (tag5='US' OR tag5='UK') AND NOT tag3 AND
-            NOT (tag4
-            LIKE 'a.*')"
-            condition="campusRef.geoPostalCode='20500' and equip and
-            boiler"
+                condition="(tag1 = 1 or tag1 = 2) and (tag2 < '' and tag2 >
+                '') and tag3 and  (tag4 LIKE '^a.*b$')"
+                condition="NOT (tag5='US' OR tag5='UK') AND NOT tag3 AND
+                NOT (tag4 LIKE 'a.*')"
+                condition="campusRef.geoPostalCode='20500' and equip and
+                boiler"
 
         :param skip: number of tags to skip. usually used with order
         :param count: limit on the number of tags to return
-        :param order: order of result - "FIRST_TO_LAST" or
-                      "LAST_TO_FIRST"
+        :param order: order of result - "FIRST_TO_LAST" or "LAST_TO_FIRST"
 
         :type ast: tuple
         :type skip: int
         :type count: int
         :type order: str
-        :return: list of topics/topic_prefix that match the given
-        query
-        conditions
+        :return: list of topics/topic_prefix that match the given query
+         conditions
         :rtype: list
         """
+
         pass
 
 
@@ -495,37 +488,49 @@ class BaseTaggingService(Agent):
     def add_topic_tags(self, topic_prefix, tags, update_version=False):
         """
         Add tags to specific topic name or topic name prefix. Calls the method
-        :py:meth:`BaseTaggingService.add_tags`
+        :py:meth:`BaseTaggingService.add_tags`.
+
+        Note: Use of this api require's platform.historian to be running. This
+        api makes RPC calls to platform.historian's get_topic_list api to
+        get the list of topics. This is used to find topic/topic prefix
+        matching any given input topic pattern.
+
         :param topic_prefix: topic name or topic name prefix
         :param tags: dictionary of tag and value in the format 
-        {<valid tag>:value, <valid_tag>: value,... }
+         {<valid tag>:value, <valid_tag>: value,... }
         :param update_version: True/False. Default to False. 
-        If set to True and if any of the tags update an existing tag 
-        value the older value would be preserved as part of tag version history
+         If set to True and if any of the tags update an existing tag
+         value the older value would be preserved as part of tag version history
         :type topic_prefix: str
         :type tags: dict
         :type update_version: bool
         """
+
         return self.add_tags({topic_prefix: tags})
 
     @RPC.export
     def add_tags(self, tags, update_version=False):
         """
         Add tags to multiple topics.
-        Calls method :py:meth:`BaseTaggingService.insert_topic_tags`
+        Calls method :py:meth:`BaseTaggingService.insert_topic_tags`.
+        Implementing methods could use
+        :py:meth:`BaseTaggingService.get_matching_topic_prefixes` to get the
+        list of topic prefix or topic names for a given topic pattern.
+
         :param tags: dictionary object or file containing the topic and the 
-        tag details. dictionary object or the file content should be of the 
-        format:
+         tag details. Dictionary object or the file content should be of the
+         format
+         <topic_name or prefix or topic_name pattern>: {<valid tag>:<value>,
+         ... }, ... }
 
-        .. code-block:: python
-
-        <topic_name or prefix or topic_name pattern>: {<valid tag>:<value>, ... }, ... }
-
-        :param update_version: True/False. Default to False. 
-        If set to True and if any of the tags update an existing tag 
-        value the older value would be preserved as part of tag version history
+        :param update_version: True/False. Defaults to False.
+         If set to True and if any of the tags update an existing tag
+         value the older value would be preserved as part of tag version
+         history. Note: this feature is not implemented in the current
+         version of sqlite and mongodb tagging service.
         :type tags: dict
         :type update_version: bool
+
         """
         _log.debug("add_tags: tags:{}".format(tags))
         return self.insert_topic_tags(tags, update_version)
@@ -537,18 +542,19 @@ class BaseTaggingService(Agent):
         Add tags to multiple topics.
 
         :param tags: dictionary object or file containing the topic
-        and the tag details. dictionary object or the file content should be
-        of the format:
+         and the tag details. dictionary object or the file content should be
+         of the format:
 
-        .. code-block:: python
+         .. code-block:: python
 
-        <topic_name or prefix or topic_name pattern>: {<valid
-        tag>:<value>, ... }, ... }
+            <topic_name or prefix or topic_name pattern>: {<valid
+            tag>:<value>, ... }, ... }
 
         :param update_version: True/False. Default to False.
-        If set to True and if any of the tags update an existing tag
-        value the older value would be preserved as part of tag
-        version history
+         If set to True and if any of the tags update an existing tag
+         value the older value would be preserved as part of tag
+         version history. Note: this feature is not implemented in the current
+         version of sqlite and mongodb tagging service.
         :type tags: dict
         :type update_version: bool
         """
@@ -557,13 +563,21 @@ class BaseTaggingService(Agent):
     def get_matching_topic_prefixes(self, topic_pattern):
         """
         Queries the platform historian to get the list of topics that match the
-        given topic pattern. Pattern matching done here is not true string
-        pattern matching. Matches are applied to different topic_prefix.
+        given topic pattern. So use of this api require's platform.historian
+        to be running. This api makes RPC calls to platform.historian's
+        :py:meth:`BaseHistorian.get_topic_list` to get the list of topics.
+        This is used to find topic/topic prefix matching any given input
+        topic pattern.
+
+        Pattern matching done here is not true string pattern matching.
+        Matches are applied to different topic_prefix.
         For example, 'campus/building1/device*' would match
         campus/building1/device1 and not campus/building1/device1/p1. Works
         only if separator is /. Else tags are always applied
         to full topic names
-        :param topic_pattern: pattern to match agains
+
+        :param topic_pattern: pattern to match again
+        :type topic_pattern: str
         :return: list of topic prefixes.
         """
         # replace * with .* so regex would match correctly
