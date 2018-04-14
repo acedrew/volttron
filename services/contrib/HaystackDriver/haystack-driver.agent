@@ -1,0 +1,14 @@
+{
+    "agentid": "haystack_driver",
+    
+    #Default Max Per Request, optional, use this number 
+    #when the caller does not provide manually
+    #"default_max_per_request": 100000,
+    
+	#Name of the bacnet network object 
+	#Defaults to "Volttron BACnet driver"
+	#"object_name": "Volttron BACnet driver",
+	
+	#Required, use this network interface for the virtual device.
+    "device_address": "10.0.2.15" 
+}
