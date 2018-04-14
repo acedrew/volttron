@@ -1,59 +1,39 @@
 # -*- coding: utf-8 -*- {{{
 # vim: set fenc=utf-8 ft=python sw=4 ts=4 sts=4 et:
-
-# Copyright (c) 2016, Battelle Memorial Institute
-# All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
+# Copyright 2017, Battelle Memorial Institute.
 #
-# 1. Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# http://www.apache.org/licenses/LICENSE-2.0
 #
-# The views and conclusions contained in the software and documentation
-# are those of the authors and should not be interpreted as representing
-# official policies, either expressed or implied, of the FreeBSD
-# Project.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
-# This material was prepared as an account of work sponsored by an
-# agency of the United States Government.  Neither the United States
-# Government nor the United States Department of Energy, nor Battelle,
-# nor any of their employees, nor any jurisdiction or organization that
-# has cooperated in the development of these materials, makes any
-# warranty, express or implied, or assumes any legal liability or
-# responsibility for the accuracy, completeness, or usefulness or any
-# information, apparatus, product, software, or process disclosed, or
-# represents that its use would not infringe privately owned rights.
-#
-# Reference herein to any specific commercial product, process, or
-# service by trade name, trademark, manufacturer, or otherwise does not
-# necessarily constitute or imply its endorsement, recommendation, or
+# This material was prepared as an account of work sponsored by an agency of
+# the United States Government. Neither the United States Government nor the
+# United States Department of Energy, nor Battelle, nor any of their
+# employees, nor any jurisdiction or organization that has cooperated in the
+# development of these materials, makes any warranty, express or
+# implied, or assumes any legal liability or responsibility for the accuracy,
+# completeness, or usefulness or any information, apparatus, product,
+# software, or process disclosed, or represents that its use would not infringe
+# privately owned rights. Reference herein to any specific commercial product,
+# process, or service by trade name, trademark, manufacturer, or otherwise
+# does not necessarily constitute or imply its endorsement, recommendation, or
 # favoring by the United States Government or any agency thereof, or
-# Battelle Memorial Institute. The views and opinions of authors
-# expressed herein do not necessarily state or reflect those of the
+# Battelle Memorial Institute. The views and opinions of authors expressed
+# herein do not necessarily state or reflect those of the
 # United States Government or any agency thereof.
 #
-# PACIFIC NORTHWEST NATIONAL LABORATORY
-# operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
+# PACIFIC NORTHWEST NATIONAL LABORATORY operated by
+# BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
-
 # }}}
 """
 pytest test cases for tagging service
@@ -66,6 +46,7 @@ import gevent
 import pytest
 from mock import MagicMock
 
+from volttron.platform import get_services_core
 from volttron.platform.jsonrpc import RemoteError
 from volttron.platform.messaging import headers as headers_mod
 from volttron.platform.messaging import topics
@@ -83,9 +64,9 @@ db_connection = None
 tagging_service_id = None
 sqlite_config = {"connection": {"type": "sqlite",
                                 "params":{"database":""}},
-                 "source": "services/core/SQLiteTaggingService"}
+                 "source": get_services_core("SQLiteTaggingService")}
 
-mongodb_config = {"source": "services/core/MongodbTaggingService",
+mongodb_config = {"source": get_services_core("MongodbTaggingService"),
                   "connection": {"type": "mongodb",
                                  "params": {"host": "localhost", "port": 27017,
                                             "database": "mongo_test",
@@ -235,6 +216,92 @@ def test_init_failure(volttron_instance, tagging_service, query_agent):
 
 
 @pytest.mark.tagging
+def test_reinstall(volttron_instance, tagging_service,
+                                   query_agent):
+    global connection_type, db_connection, tagging_service_id
+    hist_id = None
+    try:
+        hist_config = {"connection":
+                       {"type": "sqlite",
+                        "params": {
+                            "database": volttron_instance.volttron_home +
+                            "/test_tags_by_topic_no_metadata.sqlite"}}
+
+                       }
+        hist_id = volttron_instance.install_agent(
+            vip_identity='platform.historian',
+            agent_dir=get_services_core("SQLHistorian"), config_file=hist_config,
+            start=True)
+        gevent.sleep(2)
+        headers = {headers_mod.DATE: datetime.utcnow().isoformat()}
+        to_send = [{'topic': 'devices/campus1/d2/all', 'headers': headers,
+                    'message': [{'p1': 2, 'p2': 2}]}]
+        query_agent.vip.rpc.call('platform.historian', 'insert', to_send).get(
+            timeout=10)
+        gevent.sleep(3)
+
+        query_agent.vip.rpc.call('platform.tagging', 'add_topic_tags',
+                                 topic_prefix='campus1/d2',
+                                 tags={'campus': True,
+                                       'dis': "Test description",
+                                       "geoCountry": "US"}).get(timeout=10)
+
+        result1 = query_agent.vip.rpc.call('platform.tagging',
+                                           'get_tags_by_topic',
+                                           topic_prefix='campus1/d2', skip=0,
+                                           count=3, order="FIRST_TO_LAST").get(
+            timeout=10)
+        # [['campus', '1'],
+        # ['dis', 'Test description'],
+        # ['geoCountry', 'US']]
+        print result1
+        assert len(result1) == 3
+        assert len(result1[0]) == len(result1[1]) == 2
+        assert result1[0][0] == 'campus'
+        assert result1[0][1]
+        assert result1[1][0] == 'dis'
+        assert result1[1][1] == 'Test description'
+        assert result1[2][0] == 'geoCountry'
+        assert result1[2][1] == 'US'
+
+        #Now uninstall tagging service and resinstall with same config
+        volttron_instance.remove_agent(tagging_service_id)
+        gevent.sleep(2)
+        # 2. Install agent
+        source = tagging_service.pop('source')
+        tagging_service_id = volttron_instance.install_agent(
+            vip_identity='platform.tagging', agent_dir=source,
+            config_file=tagging_service, start=False)
+        volttron_instance.start_agent(tagging_service_id)
+        tagging_service['source'] = source
+        print("agent id: ", tagging_service_id)
+
+        result1 = query_agent.vip.rpc.call('platform.tagging',
+                                           'get_tags_by_topic',
+                                           topic_prefix='campus1/d2', skip=0,
+                                           count=3, order="FIRST_TO_LAST").get(
+            timeout=10)
+        # [['campus', '1'],
+        # ['dis', 'Test description'],
+        # ['geoCountry', 'US']]
+        print result1
+        assert len(result1) == 3
+        assert len(result1[0]) == len(result1[1]) == 2
+        assert result1[0][0] == 'campus'
+        assert result1[0][1]
+        assert result1[1][0] == 'dis'
+        assert result1[1][1] == 'Test description'
+        assert result1[2][0] == 'geoCountry'
+        assert result1[2][1] == 'US'
+
+
+    finally:
+        if hist_id:
+            volttron_instance.remove_agent(hist_id)
+        cleanup_function = globals()["cleanup_" + connection_type]
+        cleanup_function(db_connection, ['topic_tags'])
+
+@pytest.mark.tagging
 def test_get_categories_no_desc(tagging_service, query_agent):
     result = query_agent.vip.rpc.call('platform.tagging', 'get_categories',
                                       skip=0, count=4,
@@ -356,7 +423,7 @@ def test_insert_topic_tags(volttron_instance, tagging_service, query_agent):
                        }
         hist_id = volttron_instance.install_agent(
             vip_identity='platform.historian',
-            agent_dir='services/core/SQLHistorian', config_file=hist_config,
+            agent_dir=get_services_core("SQLHistorian"), config_file=hist_config,
             start=True)
         gevent.sleep(1)
         headers = {headers_mod.DATE: datetime.utcnow().isoformat()}
@@ -433,7 +500,7 @@ def test_insert_topic_pattern_tags(volttron_instance, tagging_service,
 
         hist_id = volttron_instance.install_agent(
             vip_identity='platform.historian',
-            agent_dir='services/core/SQLHistorian', config_file=hist_config,
+            agent_dir=get_services_core("SQLHistorian"), config_file=hist_config,
             start=True)
         gevent.sleep(1)
         query_agent.vip.rpc.call('platform.historian', 'insert', to_send).get(
@@ -546,7 +613,7 @@ def test_insert_topic_tags_update(volttron_instance, tagging_service,
 
         hist_id = volttron_instance.install_agent(
             vip_identity='platform.historian',
-            agent_dir='services/core/SQLHistorian', config_file=hist_config,
+            agent_dir=get_services_core("SQLHistorian"), config_file=hist_config,
             start=True)
         gevent.sleep(1)
         query_agent.vip.rpc.call('platform.historian', 'insert', to_send).get(
@@ -610,7 +677,7 @@ def test_update_topic_tags(volttron_instance, tagging_service, query_agent):
                        }
         hist_id = volttron_instance.install_agent(
             vip_identity='platform.historian',
-            agent_dir='services/core/SQLHistorian', config_file=hist_config,
+            agent_dir=get_services_core("SQLHistorian"), config_file=hist_config,
             start=True)
         gevent.sleep(1)
         headers = {headers_mod.DATE: datetime.utcnow().isoformat()}
@@ -729,7 +796,7 @@ def test_tags_by_topic_no_metadata(volttron_instance, tagging_service,
                        }
         hist_id = volttron_instance.install_agent(
             vip_identity='platform.historian',
-            agent_dir='services/core/SQLHistorian', config_file=hist_config,
+            agent_dir=get_services_core("SQLHistorian"), config_file=hist_config,
             start=True)
         gevent.sleep(2)
         headers = {headers_mod.DATE: datetime.utcnow().isoformat()}
@@ -835,7 +902,7 @@ def test_tags_by_topic_with_metadata(volttron_instance, tagging_service,
                        }
         hist_id = volttron_instance.install_agent(
             vip_identity='platform.historian',
-            agent_dir='services/core/SQLHistorian', config_file=hist_config,
+            agent_dir=get_services_core("SQLHistorian"), config_file=hist_config,
             start=True)
         gevent.sleep(1)
         headers = {headers_mod.DATE: datetime.utcnow().isoformat()}
@@ -929,7 +996,7 @@ def test_topic_by_tags_param_and_or(volttron_instance, tagging_service,
                        }
         hist_id = volttron_instance.install_agent(
             vip_identity='platform.historian',
-            agent_dir='services/core/SQLHistorian', config_file=hist_config,
+            agent_dir=get_services_core("SQLHistorian"), config_file=hist_config,
             start=True)
         gevent.sleep(2)
         headers = {headers_mod.DATE: datetime.utcnow().isoformat()}
@@ -1060,7 +1127,7 @@ def test_topic_by_tags_custom_condition(volttron_instance, tagging_service,
                        }
         hist_id = volttron_instance.install_agent(
             vip_identity='platform.historian',
-            agent_dir='services/core/SQLHistorian', config_file=hist_config,
+            agent_dir=get_services_core("SQLHistorian"), config_file=hist_config,
             start=True)
         gevent.sleep(2)
         headers = {headers_mod.DATE: datetime.utcnow().isoformat()}
@@ -1212,7 +1279,7 @@ def test_topic_by_tags_parent_topic_query(volttron_instance, tagging_service,
                        }
         hist_id = volttron_instance.install_agent(
             vip_identity='platform.historian',
-            agent_dir='services/core/SQLHistorian', config_file=hist_config,
+            agent_dir=get_services_core("SQLHistorian"), config_file=hist_config,
             start=True)
         gevent.sleep(2)
         headers = {headers_mod.DATE: datetime.utcnow().isoformat()}
