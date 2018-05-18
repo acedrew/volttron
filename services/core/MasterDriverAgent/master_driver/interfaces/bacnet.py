@@ -69,10 +69,11 @@ _log = logging.getLogger(__name__)
 
 class Register(BaseRegister):
     def __init__(self, instance_number, object_type, property_name, read_only, pointName, units,
-                 description = '',
-                 priority = None,
-                 list_index = None):
-        super(Register, self).__init__("byte", read_only, pointName, units, description = '')
+                 description='',
+                 interval_multiplier=None,
+                 priority=None,
+                 list_index=None):
+        super(Register, self).__init__("byte", read_only, pointName, units, description='', interval_multiplier=interval_multiplier)
         self.instance_number = int(instance_number)
         self.object_type = object_type
         self.property = property_name
@@ -161,6 +162,8 @@ class Interface(BaseInterface):
     def scrape_all(self):
         #TODO: support reading from an array.
         point_map = {}
+        # Needs access to the timestamp that triggered the scrape all
+
         read_registers = self.get_registers_by_type("byte", True)
         write_registers = self.get_registers_by_type("byte", False)
         for register in read_registers + write_registers:
@@ -222,6 +225,7 @@ class Interface(BaseInterface):
             read_only = regDef['Writable'].lower() != 'true'
             point_name = regDef['Volttron Point Name']
             index = int(regDef['Index'])
+            interval_multiplier = regDef.get('Interval Multiplier', None)
 
             list_index = regDef.get('Array Index', '')
             list_index = list_index.strip()
@@ -254,6 +258,7 @@ class Interface(BaseInterface):
                                 point_name,
                                 units,
                                 description = description,
+                                interval_multiplier = interval_multiplier,
                                 priority = priority,
                                 list_index = list_index)
 

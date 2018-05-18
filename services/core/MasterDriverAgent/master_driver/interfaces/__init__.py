@@ -212,42 +212,44 @@ class BaseRegister(object):
     publishing. When instantiating register instances be sure to provide a useful
     string for the units argument.
     """
-    def __init__(self, register_type, read_only, pointName, units, description = ''):
+    def __init__(self, register_type, read_only, pointName, units, description = '', interval_multiplier = None):
         self.read_only = read_only
         self.register_type = register_type
         self.point_name = pointName
         self.units = units
         self.description = description
         self.python_type = int
-        
+        self.interval_multiplier = interval_multiplier
+
     def get_register_python_type(self):
         """
         :return: The python type of the register.
         :rtype: type
         """
         return self.python_type
-    
+
     def get_register_type(self):
         """
         :return: (register_type, read_only)
         :rtype: tuple
         """
         return self.register_type, self.read_only
-    
+
     def get_units(self):
         """
         :return: Register units
         :rtype: str
         """
         return self.units
-    
+
     def get_description(self):
         """
         :return: Register description
         :rtype: str
         """
         return self.description
-    
+
+
 class BaseInterface(object):
     """
     Main class for implementing support for new devices.
@@ -259,22 +261,24 @@ class BaseInterface(object):
 
     """
     __metaclass__ = abc.ABCMeta
+
     def __init__(self, vip=None, core=None, **kwargs):
         super(BaseInterface, self).__init__(**kwargs)
         self.vip = vip
         self.core = core
-        
+        self.current_interval = None
+
         self.point_map = {}
-        
+
         self.build_register_map()
-        
+
     def build_register_map(self):
         self.registers = {('byte',True):[],
                           ('byte',False):[],
                           ('bit',True):[],
                           ('bit',False):[]}
-     
-    @abc.abstractmethod   
+
+    @abc.abstractmethod
     def configure(self, config_dict, registry_config_str):
         """
         Configures the :py:class:`Interface` for the specific instance of a device.
@@ -290,7 +294,7 @@ class BaseInterface(object):
         to the Interface with :py:meth:`BaseInterface.insert_register`.
         """
         pass
-        
+
     def get_register_by_name(self, name):
         """
         Get a register by it's point name.
@@ -304,7 +308,7 @@ class BaseInterface(object):
             return self.point_map[name]
         except KeyError:
             raise DriverInterfaceError("Point not configured on device: "+name)
-    
+
     def get_register_names(self):
         """
         Get a list of register names.
@@ -320,8 +324,8 @@ class BaseInterface(object):
         :rtype: dictview
         """
         return self.point_map.viewkeys()
-        
-    def get_registers_by_type(self, reg_type, read_only):
+
+    def get_registers_by_type(self, reg_type, read_only, unfiltered=False):
         """
         Get a list of registers by type. Useful for an :py:class:`Interface` that needs to categorize
         registers by type when doing a scrape.
@@ -333,8 +337,17 @@ class BaseInterface(object):
         :return: An list of BaseRegister instances.
         :rtype: list
         """
-        return self.registers[reg_type,read_only]
-        
+        registers = self.registers[reg_type,read_only]
+        if self.current_scrape_all and not unfiltered:
+            current_registers = []
+            for register in registers:
+                if (register.interval_multiplier is None or
+                    self.current_interval % register.interval_multiplier == 0):
+                    current_registers.append(register)
+            return current_registers
+        else:
+            return registers
+
     def insert_register(self, register):
         """
         Inserts a register into the :py:class:`Interface`.
@@ -344,12 +357,12 @@ class BaseInterface(object):
         """
         register_point = register.point_name
         self.point_map[register_point] = register
-        
+
         register_type = register.get_register_type()
-        self.registers[register_type].append(register)        
-        
+        self.registers[register_type].append(register)
+
     @abc.abstractmethod
-    def get_point(self, point_name, **kwargs):    
+    def get_point(self, point_name, **kwargs):
         """
         Get the current value for the point name given.
 
@@ -358,7 +371,15 @@ class BaseInterface(object):
         :type point_name: str
         :return: Point value
         """
-    
+
+    def set_current_interval(self, interval_count):
+        """
+        Sets the current interval count from midnight based on
+        the configured scrape interval
+        """
+        self.current_interval = interval_count
+
+
     @abc.abstractmethod
     def set_point(self, point_name, value, **kwargs):
         """
@@ -377,8 +398,8 @@ class BaseInterface(object):
         :type point_name: str
         :return: Actual point value set.
         """
-    
-    @abc.abstractmethod        
+
+    @abc.abstractmethod
     def scrape_all(self):
         """
         Method the Master Driver Agent calls to get the current state
@@ -387,16 +408,16 @@ class BaseInterface(object):
         :return: Point names to values for device.
         :rtype: dict
         """
-    
-    @abc.abstractmethod        
+
+    @abc.abstractmethod
     def revert_all(self, **kwargs):
         """
         Revert entire device to it's default state
 
         :param kwargs: Any interface specific parameters.
         """
-    
-    @abc.abstractmethod        
+
+    @abc.abstractmethod
     def revert_point(self, point_name, **kwargs):
         """
         Revert point to it's default state.
@@ -464,7 +485,7 @@ class RevertTracker(object):
         self.defaults = {}
         self.clean_values = {}
         self.dirty_points = set()
-    
+
     def update_clean_values(self, points):
         """
         Update all state of all the clean point values for a device.
@@ -479,7 +500,7 @@ class RevertTracker(object):
             if k not in self.dirty_points and k not in self.defaults:
                 clean_values[k] = v
         self.clean_values.update(clean_values)
-        
+
     def set_default(self, point, value):
         """
         Set the value to revert a point to. Overrides any clean value detected.
@@ -489,7 +510,7 @@ class RevertTracker(object):
         :type point: str
         """
         self.defaults[point] = value
-        
+
     def get_revert_value(self, point):
         """
         Returns the clean value for a point if no default is set, otherwise returns
@@ -506,9 +527,9 @@ class RevertTracker(object):
             return self.defaults[point]
         if point not in self.clean_values:
             raise DriverInterfaceError("Nothing to revert to for {}".format(point))
-        
+
         return self.clean_values[point]
-        
+
     def clear_dirty_point(self, point):
         """
         Clears the dirty flag on a point.
@@ -517,7 +538,7 @@ class RevertTracker(object):
         :type point: str
         """
         self.dirty_points.discard(point)
-        
+
     def mark_dirty_point(self, point):
         """
         Sets the dirty flag on a point.
@@ -529,7 +550,7 @@ class RevertTracker(object):
         """
         if point not in self.defaults:
             self.dirty_points.add(point)
-        
+
     def get_all_revert_values(self):
         """
         Returns a dict of points to revert values.
@@ -551,9 +572,9 @@ class RevertTracker(object):
                 results[point] = self.get_revert_value(point)
             except DriverInterfaceError:
                 results[point] = DriverInterfaceError()
-            
+
         return results
-    
+
 class BasicRevert(object):
     """
     A mixin that implements the :py:meth:`BaseInterface.revert_all`
@@ -584,10 +605,10 @@ class BasicRevert(object):
     def __init__(self, **kwargs):
         super(BasicRevert, self).__init__(**kwargs)
         self._tracker = RevertTracker()
-        
+
     def _update_clean_values(self, points):
         self._tracker.update_clean_values(points)
-    
+
     def set_default(self, point, value):
         """
         Set the value to revert a point to.
@@ -597,28 +618,28 @@ class BasicRevert(object):
         :type point: str
         """
         self._tracker.set_default(point, value)
-        
-    
+
+
     def set_point(self, point_name, value):
         """
         Implementation of :py:meth:`BaseInterface.set_point`
 
         Passes arguments through to :py:meth:`BasicRevert._set_point`
         """
-        result = self._set_point(point_name, value)        
+        result = self._set_point(point_name, value)
         self._tracker.mark_dirty_point(point_name)
         return result
-    
+
     def scrape_all(self):
         """
         Implementation of :py:meth:`BaseInterface.scrape_all`
         """
-        result = self._scrape_all()   
+        result = self._scrape_all()
         self._update_clean_values(result)
 
         return result
-    
-    @abc.abstractmethod    
+
+    @abc.abstractmethod
     def _set_point(self, point_name, value):
         """
         Set the current value for the point name given.
@@ -640,8 +661,8 @@ class BasicRevert(object):
         :type point_name: str
         :return: Actual point value set.
         """
-    
-    @abc.abstractmethod    
+
+    @abc.abstractmethod
     def _scrape_all(self):
         """
         Method the Master Driver Agent calls to get the current state
@@ -654,8 +675,8 @@ class BasicRevert(object):
         :return: Point names to values for device.
         :rtype: dict
         """
-    
-         
+
+
     def revert_all(self, **kwargs):
         """
         Implementation of :py:meth:`BaseInterface.revert_all`
@@ -675,8 +696,8 @@ class BasicRevert(object):
                     self._tracker.clear_dirty_point(point_name)
                 except Exception as e:
                     _log.warning("Error while reverting point {}: {}".format(point_name, str(e)))
-                
-          
+
+
     def revert_point(self, point_name, **kwargs):
         """
         Implementation of :py:meth:`BaseInterface.revert_point`
@@ -695,8 +716,8 @@ class BasicRevert(object):
             value = self._tracker.get_revert_value(point_name)
         except DriverInterfaceError:
             return
-        
+
         _log.debug("Reverting {} to {}".format(point_name, value))
-        
-        self._set_point(point_name, value)   
+
+        self._set_point(point_name, value)
         self._tracker.clear_dirty_point(point_name)

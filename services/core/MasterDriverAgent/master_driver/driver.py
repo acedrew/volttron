@@ -93,6 +93,7 @@ class DriverAgent(BasicAgent):
         self.vip = parent.vip
         self.config = config
         self.device_path = device_path
+        self.interval_count = 0
 
         self.update_publish_types(default_publish_depth_first_all ,
                                  default_publish_breadth_first_all,
@@ -157,6 +158,7 @@ class DriverAgent(BasicAgent):
         interval = self.interval
 
         offset = seconds_from_midnight % interval
+        self.interval_count = int(seconds_from_midnight / interval)
 
         if not offset:
             return now
@@ -240,7 +242,8 @@ class DriverAgent(BasicAgent):
 
 
     def periodic_read(self, now):
-        #we not use self.core.schedule to prevent drift.
+        self.interval_count += 1
+        # we not use self.core.schedule to prevent drift.
         next_scrape_time = now + datetime.timedelta(seconds=self.interval)
         # Sanity check now.
         # This is specifically for when this is running in a VM that gets
@@ -259,6 +262,7 @@ class DriverAgent(BasicAgent):
         _log.debug("scraping device: " + self.device_name)
 
         self.parent.scrape_starting(self.device_name)
+        self.interface.set_current_interval(self.interval_count)
 
         try:
             results = self.interface.scrape_all()
