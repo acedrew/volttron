@@ -1,59 +1,39 @@
 # -*- coding: utf-8 -*- {{{
 # vim: set fenc=utf-8 ft=python sw=4 ts=4 sts=4 et:
-
-# Copyright (c) 2016, Battelle Memorial Institute
-# All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
+# Copyright 2017, Battelle Memorial Institute.
 #
-# 1. Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# http://www.apache.org/licenses/LICENSE-2.0
 #
-# The views and conclusions contained in the software and documentation
-# are those of the authors and should not be interpreted as representing
-# official policies, either expressed or implied, of the FreeBSD
-# Project.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
-# This material was prepared as an account of work sponsored by an
-# agency of the United States Government.  Neither the United States
-# Government nor the United States Department of Energy, nor Battelle,
-# nor any of their employees, nor any jurisdiction or organization that
-# has cooperated in the development of these materials, makes any
-# warranty, express or implied, or assumes any legal liability or
-# responsibility for the accuracy, completeness, or usefulness or any
-# information, apparatus, product, software, or process disclosed, or
-# represents that its use would not infringe privately owned rights.
-#
-# Reference herein to any specific commercial product, process, or
-# service by trade name, trademark, manufacturer, or otherwise does not
-# necessarily constitute or imply its endorsement, recommendation, or
+# This material was prepared as an account of work sponsored by an agency of
+# the United States Government. Neither the United States Government nor the
+# United States Department of Energy, nor Battelle, nor any of their
+# employees, nor any jurisdiction or organization that has cooperated in the
+# development of these materials, makes any warranty, express or
+# implied, or assumes any legal liability or responsibility for the accuracy,
+# completeness, or usefulness or any information, apparatus, product,
+# software, or process disclosed, or represents that its use would not infringe
+# privately owned rights. Reference herein to any specific commercial product,
+# process, or service by trade name, trademark, manufacturer, or otherwise
+# does not necessarily constitute or imply its endorsement, recommendation, or
 # favoring by the United States Government or any agency thereof, or
-# Battelle Memorial Institute. The views and opinions of authors
-# expressed herein do not necessarily state or reflect those of the
+# Battelle Memorial Institute. The views and opinions of authors expressed
+# herein do not necessarily state or reflect those of the
 # United States Government or any agency thereof.
 #
-# PACIFIC NORTHWEST NATIONAL LABORATORY
-# operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
+# PACIFIC NORTHWEST NATIONAL LABORATORY operated by
+# BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
-
 # }}}
 """
 pytest test cases for tagging service
@@ -66,6 +46,7 @@ import gevent
 import pytest
 from mock import MagicMock
 
+from volttron.platform import get_services_core
 from volttron.platform.jsonrpc import RemoteError
 from volttron.platform.messaging import headers as headers_mod
 from volttron.platform.messaging import topics
@@ -82,16 +63,62 @@ connection_type = ""
 db_connection = None
 tagging_service_id = None
 sqlite_config = {"connection": {"type": "sqlite",
-                                "params":{"database":""}},
-                 "source": "services/core/SQLiteTaggingService"}
+                                "params": {"database": ""}},
+                 "source": get_services_core("SQLiteTaggingService")}
 
-mongodb_config = {"source": "services/core/MongodbTaggingService",
+mongodb_config = {"source": get_services_core("MongodbTaggingService"),
                   "connection": {"type": "mongodb",
                                  "params": {"host": "localhost", "port": 27017,
                                             "database": "mongo_test",
                                             "user": "test",
                                             "passwd": "test",
-                                            "authSource":"admin"}}}
+                                            "authSource": "admin"}}}
+
+sqlite_historian = {
+    "source": get_services_core("SQLHistorian"),
+    "connection": {"type": "sqlite"}}
+mysql_historian = {
+    "source": get_services_core("SQLHistorian"),
+    "connection": {
+        "type": "mysql",
+        "params": {
+            "host": "localhost",
+            "port": 3306,
+            "database": "test_historian",
+            "user": "historian",
+            "passwd": "historian"
+        }
+    }
+}
+mongo_historian = {
+    "source": get_services_core("MongodbHistorian"),
+    "connection": {"type": "mongodb",
+                   "params": {"host": "localhost",
+                              "port": 27017,
+                              "database": "mongo_test",
+                              "user": "test",
+                              "passwd": "test",
+                              "authSource": "admin"}
+                   }
+}
+crate_historian = {
+    "source": get_services_core("CrateHistorian"),
+    "connection": {
+        "type": "crate",
+        "schema": "testing",
+        "params": {
+            "host": "localhost:4200"
+        }
+    }
+}
+
+historians = [
+    None,
+    sqlite_historian,
+    mysql_historian,
+    mongo_historian,
+    crate_historian
+]
 
 
 def setup_sqlite(config):
@@ -122,10 +149,13 @@ def setup_mongodb(config):
 def cleanup_sqlite(db_connection, truncate_tables):
     cursor = db_connection.cursor()
     for table in truncate_tables:
-        cursor.execute("DELETE FROM " + table)
+        try:
+            cursor.execute("DELETE FROM " + table)
+        except sqlite3.OperationalError as e:
+            print("Unable to truncate table {}. {}".format(table, e))
+
     db_connection.commit()
     pass
-
 
 
 def cleanup_mongodb(db_connection, truncate_tables):
@@ -154,7 +184,7 @@ def query_agent(request, volttron_instance):
                 params=[
                     sqlite_config,
                     pymongo_skipif(mongodb_config)
-                    ])
+                ])
 def tagging_service(request, volttron_instance):
     global connection_type, db_connection, tagging_service_id
     connection_type = request.param['connection']['type']
@@ -215,7 +245,7 @@ def test_init_failure(volttron_instance, tagging_service, query_agent):
                                          "database": "mongo_test",
                                          "user": "invalid_user",
                                          "passwd": "test",
-                                         "authSource":"admin"}}
+                                         "authSource": "admin"}}
         source = new_config.pop('source')
         try:
             agent_id = volttron_instance.install_agent(
@@ -232,6 +262,94 @@ def test_init_failure(volttron_instance, tagging_service, query_agent):
     finally:
         if agent_id:
             volttron_instance.remove_agent(agent_id)
+
+
+@pytest.mark.tagging
+def test_reinstall(volttron_instance, tagging_service,
+                   query_agent):
+    global connection_type, db_connection, tagging_service_id
+    hist_id = None
+    try:
+        hist_config = {"connection":
+                           {"type": "sqlite",
+                            "params": {
+                                "database": volttron_instance.volttron_home +
+                                    "/test_tags_by_topic_no_metadata.sqlite"}}
+
+                       }
+        hist_id = volttron_instance.install_agent(
+            vip_identity='platform.historian',
+            agent_dir=get_services_core("SQLHistorian"),
+            config_file=hist_config,
+            start=True)
+        gevent.sleep(2)
+        headers = {headers_mod.DATE: datetime.utcnow().isoformat()}
+        to_send = [{'topic': 'devices/campus1/d2/all', 'headers': headers,
+                    'message': [{'p1': 2, 'p2': 2}]}]
+        query_agent.vip.rpc.call('platform.historian', 'insert', to_send).get(
+            timeout=10)
+        gevent.sleep(3)
+
+        query_agent.vip.rpc.call('platform.tagging', 'add_topic_tags',
+                                 topic_prefix='campus1/d2',
+                                 tags={'campus': True,
+                                       'dis': "Test description",
+                                       "geoCountry": "US"}).get(timeout=10)
+
+        result1 = query_agent.vip.rpc.call('platform.tagging',
+                                           'get_tags_by_topic',
+                                           topic_prefix='campus1/d2', skip=0,
+                                           count=3, order="FIRST_TO_LAST").get(
+            timeout=10)
+        # [['campus', '1'],
+        # ['dis', 'Test description'],
+        # ['geoCountry', 'US']]
+        print result1
+        assert len(result1) == 3
+        assert len(result1[0]) == len(result1[1]) == 2
+        assert result1[0][0] == 'campus'
+        assert result1[0][1]
+        assert result1[1][0] == 'dis'
+        assert result1[1][1] == 'Test description'
+        assert result1[2][0] == 'geoCountry'
+        assert result1[2][1] == 'US'
+
+        # Now uninstall tagging service and resinstall with same config
+        volttron_instance.remove_agent(tagging_service_id)
+        gevent.sleep(2)
+        # 2. Install agent
+        source = tagging_service.pop('source')
+        tagging_service_id = volttron_instance.install_agent(
+            vip_identity='platform.tagging', agent_dir=source,
+            config_file=tagging_service, start=False)
+        volttron_instance.start_agent(tagging_service_id)
+        tagging_service['source'] = source
+        print("agent id: ", tagging_service_id)
+
+        result1 = query_agent.vip.rpc.call('platform.tagging',
+                                           'get_tags_by_topic',
+                                           topic_prefix='campus1/d2', skip=0,
+                                           count=3, order="FIRST_TO_LAST").get(
+            timeout=10)
+        # [['campus', '1'],
+        # ['dis', 'Test description'],
+        # ['geoCountry', 'US']]
+        print result1
+        assert len(result1) == 3
+        assert len(result1[0]) == len(result1[1]) == 2
+        assert result1[0][0] == 'campus'
+        assert result1[0][1]
+        assert result1[1][0] == 'dis'
+        assert result1[1][1] == 'Test description'
+        assert result1[2][0] == 'geoCountry'
+        assert result1[2][1] == 'US'
+
+
+    finally:
+        if hist_id:
+            volttron_instance.remove_agent(hist_id)
+        cleanup_function = globals()["cleanup_" + connection_type]
+        cleanup_function(db_connection, ['topic_tags'])
 
 
 @pytest.mark.tagging
@@ -343,37 +461,37 @@ def test_tags_by_category_with_metadata(tagging_service, query_agent):
     assert len(result3[0]) == 3
 
 
+@pytest.mark.parametrize("historian_config", historians)
 @pytest.mark.tagging
-def test_insert_topic_tags(volttron_instance, tagging_service, query_agent):
+def test_insert_topic_tags(volttron_instance, tagging_service, query_agent,
+                           historian_config):
     global connection_type, db_connection
-    hist_id = None
+    historian_id = None
+    new_tagging_id = None
+    tag_table_prefix = "insert"
     try:
-        hist_config = {"connection":
-                       {"type": "sqlite",
-                        "params": {"database":
-                                   volttron_instance.volttron_home +
-                                   "/test_platform_historian.sqlite"}}
-                       }
-        hist_id = volttron_instance.install_agent(
-            vip_identity='platform.historian',
-            agent_dir='services/core/SQLHistorian', config_file=hist_config,
-            start=True)
-        gevent.sleep(1)
+        historian_id, historian_vip_identity, new_tagging_id, \
+        new_tagging_vip_id = \
+            setup_test_specific_agents(volttron_instance,
+                                       historian_config,
+                                       tagging_service,
+                                       tag_table_prefix)
+
         headers = {headers_mod.DATE: datetime.utcnow().isoformat()}
         to_send = [{'topic': 'devices/campus1/d1/all', 'headers': headers,
                     'message': [{'p1': 2, 'p2': 2}]}]
-        query_agent.vip.rpc.call('platform.historian', 'insert', to_send).get(
+        query_agent.vip.rpc.call(historian_vip_identity, 'insert', to_send).get(
             timeout=10)
         gevent.sleep(2)
 
-        query_agent.vip.rpc.call('platform.tagging', 'add_topic_tags',
-                                 topic_prefix='campus1/d1',
-                                 tags={'campus': True,
-                                       'dis': "Test description"}).get(
-            timeout=10)
+        query_agent.vip.rpc.call(
+            new_tagging_vip_id,
+            'add_topic_tags',
+            topic_prefix='campus1/d1',
+            tags={'campus': True, 'dis': "Test description"}).get(timeout=10)
 
         result3 = query_agent.vip.rpc.call(
-            'platform.tagging', 'get_tags_by_topic',
+            new_tagging_vip_id, 'get_tags_by_topic',
             topic_prefix='campus1/d1', include_kind=True,
             include_description=True, skip=0, count=3,
             order="LAST_TO_FIRST").get(timeout=10)
@@ -402,24 +520,32 @@ def test_insert_topic_tags(volttron_instance, tagging_service, query_agent):
                    3] == 'Marks a campus that might have one or more ' \
                          'site/building'
     finally:
-        if hist_id:
-            volttron_instance.remove_agent(hist_id)
         cleanup_function = globals()["cleanup_" + connection_type]
-        cleanup_function(db_connection, ['topic_tags'])
+        cleanup_function(db_connection, [tag_table_prefix + '_topic_tags'])
+        if historian_id:
+            volttron_instance.remove_agent(historian_id)
+        if new_tagging_id:
+            volttron_instance.remove_agent(new_tagging_id)
 
+
+@pytest.mark.parametrize("historian_config", historians)
 @pytest.mark.tagging
 def test_insert_topic_pattern_tags(volttron_instance, tagging_service,
-                                   query_agent):
+                                   query_agent, historian_config):
     global connection_type, db_connection
-    hist_id = None
-    try:
-        hist_config = {"connection":
-                       {"type": "sqlite",
-                        "params": {
-                            "database": volttron_instance.volttron_home +
-                            "/for_insert_topic_pattern.sqlite"}}
 
-                       }
+    historian_id = None
+    new_tagging_id = None
+    tag_table_prefix = "insert"
+    try:
+
+        historian_id, historian_vip_identity, new_tagging_id, \
+        new_tagging_vip_id = \
+            setup_test_specific_agents(volttron_instance,
+                                       historian_config,
+                                       tagging_service,
+                                       tag_table_prefix)
+
         to_send = []
         headers = {headers_mod.DATE: datetime.utcnow().isoformat()}
         to_send.append({'topic': 'devices/campus1/d1/all', 'headers': headers,
@@ -431,12 +557,7 @@ def test_insert_topic_pattern_tags(volttron_instance, tagging_service,
         to_send.append({'topic': 'devices/campus2/d2/all', 'headers': headers,
                         'message': [{'p1': 2, 'p2': 2}]})
 
-        hist_id = volttron_instance.install_agent(
-            vip_identity='platform.historian',
-            agent_dir='services/core/SQLHistorian', config_file=hist_config,
-            start=True)
-        gevent.sleep(1)
-        query_agent.vip.rpc.call('platform.historian', 'insert', to_send).get(
+        query_agent.vip.rpc.call(historian_vip_identity, 'insert', to_send).get(
             timeout=10)
         gevent.sleep(2)
 
@@ -455,7 +576,7 @@ def test_insert_topic_pattern_tags(volttron_instance, tagging_service,
         # all points p2 points in d1 and d2
         # invalid topic
 
-        result = query_agent.vip.rpc.call('platform.tagging', 'add_tags',
+        result = query_agent.vip.rpc.call(new_tagging_vip_id, 'add_tags',
                                           tags=tags).get(timeout=10)
         print(result)
 
@@ -474,7 +595,7 @@ def test_insert_topic_pattern_tags(volttron_instance, tagging_service,
         assert cmp(expected_err, result['error']) == 0
         assert cmp(exepected_info, result['info']) == 0
 
-        result1 = query_agent.vip.rpc.call('platform.tagging',
+        result1 = query_agent.vip.rpc.call(new_tagging_vip_id,
                                            'get_tags_by_topic',
                                            topic_prefix='campus2/d2/p2',
                                            skip=0, count=3,
@@ -489,7 +610,7 @@ def test_insert_topic_pattern_tags(volttron_instance, tagging_service,
         assert result1[2][0] == 'point'
         assert result1[2][1]
 
-        result1 = query_agent.vip.rpc.call('platform.tagging',
+        result1 = query_agent.vip.rpc.call(new_tagging_vip_id,
                                            'get_tags_by_topic',
                                            topic_prefix='campus2', skip=0,
                                            count=3,
@@ -504,7 +625,7 @@ def test_insert_topic_pattern_tags(volttron_instance, tagging_service,
         assert result1[2][0] == 'id'
         assert result1[2][1] == "campus2"
 
-        result2 = query_agent.vip.rpc.call('platform.tagging',
+        result2 = query_agent.vip.rpc.call(new_tagging_vip_id,
                                            'get_tags_by_topic',
                                            topic_prefix='campus1', skip=0,
                                            count=3,
@@ -521,45 +642,44 @@ def test_insert_topic_pattern_tags(volttron_instance, tagging_service,
 
     finally:
         cleanup_function = globals()["cleanup_" + connection_type]
-        cleanup_function(db_connection, ['topic_tags'])
-        if hist_id:
-            volttron_instance.remove_agent(hist_id)
+        cleanup_function(db_connection, [tag_table_prefix + '_topic_tags'])
+        if historian_id:
+            volttron_instance.remove_agent(historian_id)
+        if new_tagging_id:
+            volttron_instance.remove_agent(new_tagging_id)
 
 
+@pytest.mark.parametrize("historian_config", historians)
 @pytest.mark.tagging
 def test_insert_topic_tags_update(volttron_instance, tagging_service,
-                                  query_agent):
+                                  query_agent, historian_config):
     global connection_type, db_connection
-    hist_id = None
+    historian_id = None
+    new_tagging_id = None
+    tag_table_prefix = "insert"
     try:
-        hist_config = {"connection":
-                       {"type": "sqlite",
-                        "params": {
-                            "database": volttron_instance.volttron_home +
-                            "/for_insert_topic_tags_update.sqlite"}}
-
-                       }
+        historian_id, historian_vip_identity, new_tagging_id, \
+        new_tagging_vip_id = \
+            setup_test_specific_agents(volttron_instance,
+                                       historian_config,
+                                       tagging_service,
+                                       tag_table_prefix)
         to_send = []
         headers = {headers_mod.DATE: datetime.utcnow().isoformat()}
         to_send.append({'topic': 'devices/campus1/d1/all', 'headers': headers,
                         'message': [{'p1': 2, 'p2': 2}]})
 
-        hist_id = volttron_instance.install_agent(
-            vip_identity='platform.historian',
-            agent_dir='services/core/SQLHistorian', config_file=hist_config,
-            start=True)
-        gevent.sleep(1)
-        query_agent.vip.rpc.call('platform.historian', 'insert', to_send).get(
+        query_agent.vip.rpc.call(historian_vip_identity, 'insert', to_send).get(
             timeout=10)
         gevent.sleep(3)
 
         # specific campus
         tags = {'campus1': {'geoCity': 'Richland', 'id': 'overwrite'}}
 
-        result = query_agent.vip.rpc.call('platform.tagging', 'add_tags',
+        result = query_agent.vip.rpc.call(new_tagging_vip_id, 'add_tags',
                                           tags=tags).get(timeout=10)
 
-        result2 = query_agent.vip.rpc.call('platform.tagging',
+        result2 = query_agent.vip.rpc.call(new_tagging_vip_id,
                                            'get_tags_by_topic',
                                            topic_prefix='campus1', skip=0,
                                            count=3,
@@ -573,10 +693,10 @@ def test_insert_topic_tags_update(volttron_instance, tagging_service,
         assert result2[0][1] == "campus1"
 
         tags = {'campus1': {'geoCity': 'Pasco', 'id': 'overwrite'}}
-        result = query_agent.vip.rpc.call('platform.tagging', 'add_tags',
+        result = query_agent.vip.rpc.call(new_tagging_vip_id, 'add_tags',
                                           tags=tags).get(timeout=10)
 
-        result2 = query_agent.vip.rpc.call('platform.tagging',
+        result2 = query_agent.vip.rpc.call(new_tagging_vip_id,
                                            'get_tags_by_topic',
                                            topic_prefix='campus1', skip=0,
                                            count=3,
@@ -591,9 +711,11 @@ def test_insert_topic_tags_update(volttron_instance, tagging_service,
 
     finally:
         cleanup_function = globals()["cleanup_" + connection_type]
-        cleanup_function(db_connection, ['topic_tags'])
-        if hist_id:
-            volttron_instance.remove_agent(hist_id)
+        cleanup_function(db_connection, [tag_table_prefix + '_topic_tags'])
+        if historian_id:
+            volttron_instance.remove_agent(historian_id)
+        if new_tagging_id:
+            volttron_instance.remove_agent(new_tagging_id)
 
 
 @pytest.mark.tagging
@@ -602,15 +724,16 @@ def test_update_topic_tags(volttron_instance, tagging_service, query_agent):
     hist_id = None
     try:
         hist_config = {"connection":
-                       {"type": "sqlite",
-                        "params": {
-                            "database": volttron_instance.volttron_home +
-                            "/test_update_topic_tags.sqlite"}}
+                           {"type": "sqlite",
+                            "params": {
+                                "database": volttron_instance.volttron_home +
+                                    "/test_update_topic_tags.sqlite"}}
 
                        }
         hist_id = volttron_instance.install_agent(
             vip_identity='platform.historian',
-            agent_dir='services/core/SQLHistorian', config_file=hist_config,
+            agent_dir=get_services_core("SQLHistorian"),
+            config_file=hist_config,
             start=True)
         gevent.sleep(1)
         headers = {headers_mod.DATE: datetime.utcnow().isoformat()}
@@ -721,15 +844,16 @@ def test_tags_by_topic_no_metadata(volttron_instance, tagging_service,
     hist_id = None
     try:
         hist_config = {"connection":
-                       {"type": "sqlite",
-                        "params": {
-                            "database": volttron_instance.volttron_home +
-                            "/test_tags_by_topic_no_metadata.sqlite"}}
+                           {"type": "sqlite",
+                            "params": {
+                                "database": volttron_instance.volttron_home +
+                                    "/test_tags_by_topic_no_metadata.sqlite"}}
 
                        }
         hist_id = volttron_instance.install_agent(
             vip_identity='platform.historian',
-            agent_dir='services/core/SQLHistorian', config_file=hist_config,
+            agent_dir=get_services_core("SQLHistorian"),
+            config_file=hist_config,
             start=True)
         gevent.sleep(2)
         headers = {headers_mod.DATE: datetime.utcnow().isoformat()}
@@ -826,16 +950,16 @@ def test_tags_by_topic_with_metadata(volttron_instance, tagging_service,
     global connection_type, db_connection
     hist_id = None
     try:
-        hist_config = {"connection":
-                       {"type": "sqlite",
-                        "params": {
-                            "database": volttron_instance.volttron_home +
-                            "/test_tags_by_topic_with_metadata.sqlite"}}
-
-                       }
+        hist_config = \
+            {"connection":
+               {"type": "sqlite",
+                "params": {
+                    "database": volttron_instance.volttron_home +
+                        "/test_tags_by_topic_with_metadata.sqlite"}}}
         hist_id = volttron_instance.install_agent(
             vip_identity='platform.historian',
-            agent_dir='services/core/SQLHistorian', config_file=hist_config,
+            agent_dir=get_services_core("SQLHistorian"),
+            config_file=hist_config,
             start=True)
         gevent.sleep(1)
         headers = {headers_mod.DATE: datetime.utcnow().isoformat()}
@@ -921,15 +1045,16 @@ def test_topic_by_tags_param_and_or(volttron_instance, tagging_service,
         # 1. Start historian to get some valid topics in. tagging service
         # add tag api uses historian to get topic name by pattern
         hist_config = {"connection":
-                       {"type": "sqlite",
-                        "params": {
-                            "database": volttron_instance.volttron_home +
-                            "/test_topic_by_tags_param_and_or.sqlite"}}
+                           {"type": "sqlite",
+                            "params": {
+                                "database": volttron_instance.volttron_home +
+                                    "/test_topic_by_tags_param_and_or.sqlite"}}
 
                        }
         hist_id = volttron_instance.install_agent(
             vip_identity='platform.historian',
-            agent_dir='services/core/SQLHistorian', config_file=hist_config,
+            agent_dir=get_services_core("SQLHistorian"),
+            config_file=hist_config,
             start=True)
         gevent.sleep(2)
         headers = {headers_mod.DATE: datetime.utcnow().isoformat()}
@@ -991,18 +1116,19 @@ def test_topic_by_tags_param_and_or(volttron_instance, tagging_service,
         # Dict
         result1 = query_agent.vip.rpc.call(
             'platform.tagging', 'get_topics_by_tags',
-            and_condition={'campus':True, 'geoCountry':'US'}).get(timeout=10)
+            and_condition={'campus': True, 'geoCountry': 'US'}).get(timeout=10)
         print ("Results of simple AND query: {} ".format(result1))
         assert result1 == ['campus1']
 
         # Array
         result1 = query_agent.vip.rpc.call(
             'platform.tagging', 'get_topics_by_tags',
-            and_condition=['equip','elec']).get(timeout=10)
+            and_condition=['equip', 'elec']).get(timeout=10)
         assert result1 == ['campus1/d1', 'campus1/d2', 'campus2/d1']
 
         # OR condition
-        result1 = query_agent.vip.rpc.call('platform.tagging',
+        result1 = query_agent.vip.rpc.call(
+            'platform.tagging',
             'get_topics_by_tags',
             or_condition={"geoCountry": "UK",
                           'dis': "Test campus description"}).get(timeout=10)
@@ -1011,7 +1137,9 @@ def test_topic_by_tags_param_and_or(volttron_instance, tagging_service,
 
         # Array
         result1 = query_agent.vip.rpc.call('platform.tagging',
-            'get_topics_by_tags', or_condition=['campus', 'equip']).get(
+                                           'get_topics_by_tags',
+                                           or_condition=['campus',
+                                                         'equip']).get(
             timeout=10)
         assert result1 == ['campus1', 'campus1/d1', 'campus1/d2',
                            'campus2', 'campus2/d1']
@@ -1028,7 +1156,7 @@ def test_topic_by_tags_param_and_or(volttron_instance, tagging_service,
         result1 = query_agent.vip.rpc.call(
             'platform.tagging',
             'get_topics_by_tags',
-            and_condition={'equip':True,
+            and_condition={'equip': True,
                            'elec': True,
                            'campusRef.geoCountry': "UK",
                            'campusRef.dis': "United Kingdom"}).get(timeout=10)
@@ -1052,15 +1180,16 @@ def test_topic_by_tags_custom_condition(volttron_instance, tagging_service,
         # 1. Start historian to get some valid topics in. tagging service
         # add tag api uses historian to get topic name by pattern
         hist_config = {"connection":
-                       {"type": "sqlite",
-                        "params": {
-                            "database": volttron_instance.volttron_home +
-                            "/topic_by_tags_custom_condition.sqlite"}}
+                           {"type": "sqlite",
+                            "params": {
+                                "database": volttron_instance.volttron_home +
+                                    "/topic_by_tags_custom_condition.sqlite"}}
 
                        }
         hist_id = volttron_instance.install_agent(
             vip_identity='platform.historian',
-            agent_dir='services/core/SQLHistorian', config_file=hist_config,
+            agent_dir=get_services_core("SQLHistorian"),
+            config_file=hist_config,
             start=True)
         gevent.sleep(2)
         headers = {headers_mod.DATE: datetime.utcnow().isoformat()}
@@ -1105,7 +1234,7 @@ def test_topic_by_tags_custom_condition(volttron_instance, tagging_service,
                 'campus.*/d2': {'equip': True, 'elec': True,
                                 'phase': 'p2'},
                 'campus1/d.*': {'campusRef': 'campus1'},
-                'campus2/d.*': {'campusRef': 'campus2'} }).get(timeout=10)
+                'campus2/d.*': {'campusRef': 'campus2'}}).get(timeout=10)
 
         query_agent.vip.rpc.call('platform.tagging', 'add_topic_tags',
                                  topic_prefix='campus2/d1',
@@ -1196,7 +1325,7 @@ def test_topic_by_tags_custom_condition(volttron_instance, tagging_service,
 
 @pytest.mark.tagging
 def test_topic_by_tags_parent_topic_query(volttron_instance, tagging_service,
-                                        query_agent):
+                                          query_agent):
     global connection_type, db_connection
     hist_id = None
     try:
@@ -1204,15 +1333,16 @@ def test_topic_by_tags_parent_topic_query(volttron_instance, tagging_service,
         # 1. Start historian to get some valid topics in. tagging service
         # add tag api uses historian to get topic name by pattern
         hist_config = {"connection":
-                       {"type": "sqlite",
-                        "params": {
-                            "database": volttron_instance.volttron_home +
-                            "/topic_by_tags_parent_topic.sqlite"}}
+                           {"type": "sqlite",
+                            "params": {
+                                "database": volttron_instance.volttron_home +
+                                    "/topic_by_tags_parent_topic.sqlite"}}
 
                        }
         hist_id = volttron_instance.install_agent(
             vip_identity='platform.historian',
-            agent_dir='services/core/SQLHistorian', config_file=hist_config,
+            agent_dir=get_services_core("SQLHistorian"),
+            config_file=hist_config,
             start=True)
         gevent.sleep(2)
         headers = {headers_mod.DATE: datetime.utcnow().isoformat()}
@@ -1275,14 +1405,16 @@ def test_topic_by_tags_parent_topic_query(volttron_instance, tagging_service,
         print("Result of NOT LIKE query: {}".format(result1))
         assert result1 == ['campus2/d1']
 
-        result1 = query_agent.vip.rpc.call('platform.tagging',
+        result1 = query_agent.vip.rpc.call(
+            'platform.tagging',
             'get_topics_by_tags',
-            condition='equip AND elec AND campusRef.geoCountry LIKE '
-                      '"UK.*"').get(timeout=10)
+            condition='equip AND elec AND campusRef.geoCountry LIKE "UK.*"'
+        ).get(timeout=10)
         print("Result of NOT LIKE query: {}".format(result1))
         assert result1 == ['campus2/d1']
 
-        result1 = query_agent.vip.rpc.call('platform.tagging',
+        result1 = query_agent.vip.rpc.call(
+            'platform.tagging',
             'get_topics_by_tags',
             condition='equip AND elec AND campusRef.geoCountry="UK" AND '
                       'campusRef.dis="United Kingdom"').get(timeout=10)
@@ -1292,8 +1424,7 @@ def test_topic_by_tags_parent_topic_query(volttron_instance, tagging_service,
         result1 = query_agent.vip.rpc.call(
             'platform.tagging', 'get_topics_by_tags',
             condition='equip AND elec AND NOT(campusRef.geoCountry="UK" AND '
-                      'campusRef.dis="United Kingdom")').get(
-            timeout=10)
+                      'campusRef.dis="United Kingdom")').get(timeout=10)
         print("Result of NOT LIKE query: {}".format(result1))
         assert result1 == ['campus1/d1', 'campus1/d2']
 
@@ -1302,6 +1433,7 @@ def test_topic_by_tags_parent_topic_query(volttron_instance, tagging_service,
             volttron_instance.remove_agent(hist_id)
         cleanup_function = globals()["cleanup_" + connection_type]
         cleanup_function(db_connection, ['topic_tags'])
+
 
 @pytest.mark.tagging
 def test_topic_by_tags_condition_errors(volttron_instance, tagging_service,
@@ -1336,3 +1468,46 @@ def test_topic_by_tags_condition_errors(volttron_instance, tagging_service,
                             'Invalid token 10 at line ' \
                             'number 1 and column number 12'
         assert e.exc_info['exc_type'] == 'ValueError'
+
+
+def setup_test_specific_agents(volttron_instance, historian_config,
+                               tagging_service, table_prefix):
+    new_tag_service = copy.copy(tagging_service)
+    if historian_config is None or \
+            historian_config["connection"]["type"] == "sqlite":
+        historian_config = {
+            "source": get_services_core("SQLHistorian"),
+            "connection":
+                {"type": "sqlite",
+                 "params": {
+                     "database":
+                         volttron_instance.volttron_home +
+                         "/for_insert_topic_pattern.sqlite"}
+                 }
+        }
+    historian_vip_identity = "platform.historian"
+    historian_source = get_services_core("SQLHistorian")
+    if historian_config is not None:
+        historian_vip_identity = historian_config["connection"]["type"] \
+                                 + ".historian"
+        historian_source = historian_config.pop("source")
+        new_tag_service['historian_vip_identity'] = historian_vip_identity
+        new_tag_service["table_prefix"] = table_prefix
+
+    hist_id = volttron_instance.install_agent(
+        vip_identity=historian_vip_identity,
+        agent_dir=historian_source, config_file=historian_config,
+        start=True)
+    gevent.sleep(1)
+
+    # put source back in config after install so that it can be used for next
+    # test case
+    historian_config["source"] = historian_source
+
+    new_tagging_id = volttron_instance.install_agent(
+        vip_identity='new_tagging',
+        agent_dir=new_tag_service.pop("source"),
+        config_file=new_tag_service,
+        start=True)
+    gevent.sleep(1)
+    return hist_id, historian_vip_identity, new_tagging_id, 'new_tagging'
