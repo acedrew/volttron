@@ -267,7 +267,7 @@ class BaseInterface(object):
         self.vip = vip
         self.core = core
         self.current_interval = None
-        self.current_scrape_all = False
+        self.current_scrape_all = True
 
         self.point_map = {}
 
