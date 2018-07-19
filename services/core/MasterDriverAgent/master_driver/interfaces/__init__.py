@@ -267,7 +267,6 @@ class BaseInterface(object):
         self.vip = vip
         self.core = core
         self.current_interval = None
-        self.current_scrape_all = True
 
         self.point_map = {}
 
@@ -339,12 +338,12 @@ class BaseInterface(object):
         :rtype: list
         """
         registers = self.registers[reg_type,read_only]
-        if self.current_scrape_all and not unfiltered:
+        if not unfiltered:
             current_registers = []
             for register in registers:
-                if (register.interval_multiplier is None or
-                    self.current_interval % register.interval_multiplier == 0):
-                    current_registers.append(register)
+                if ((register.interval_multiplier is None) or (
+                    (self.current_interval % register.interval_multiplier) == 0)):
+                        current_registers.append(register)
             return current_registers
         else:
             return registers

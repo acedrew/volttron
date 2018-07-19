@@ -201,7 +201,7 @@ class Interface(BaseInterface):
     def revert_all(self, priority=None):
         """Revert entrire device to it's default state"""
         #TODO: Add multipoint write support
-        write_registers = self.get_registers_by_type("byte", False)
+        write_registers = self.get_registers_by_type("byte", False, True)
         for register in write_registers:
             self.revert_point(register.point_name, priority=priority)
 
@@ -226,6 +226,10 @@ class Interface(BaseInterface):
             point_name = regDef['Volttron Point Name']
             index = int(regDef['Index'])
             interval_multiplier = regDef.get('Interval Multiplier', None)
+            if interval_multiplier:
+                interval_multiplier = int(interval_multiplier)
+            else:
+                interval_multiplier = None
 
             list_index = regDef.get('Array Index', '')
             list_index = list_index.strip()
