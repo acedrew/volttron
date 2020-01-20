@@ -277,7 +277,7 @@ class BasicCore(object):
                     cur.link(lambda glt: greenlet.kill())
 
         self._stop_event = stop = gevent.event.Event()
-        self._async = gevent.get_hub().loop.async()
+        self._async = gevent.get_hub().loop.async_()
         self._async.start(handle_async)
         current.link(lambda glt: self._async.stop())
 
